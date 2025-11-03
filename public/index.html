@@ -4,9 +4,17 @@
         <meta charset="UTF-8">
         <title>Glob Game</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+        <audio id="spawn" src="./audio/spawn.mp3"></audio>
+        <link rel="stylesheet" href="./css/style.css" />
     </head>
     <body>
-        <b>Hello, World!</b>
+        <div id="startMenu">
+            <p>Glob Game</p>
+            <input type="text" tabindex="0" autofocus placeholder="Username" id="usernameInput" maxlength="20" />
+            <b class="input-error">Username must be alphanumeric characters only!</b>
+            <a onclick="document.getElementById('spawn').play();"><button id="startButton">Play</button></a>
+        </div>
         <script src="./app.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     </body>
 </html>
