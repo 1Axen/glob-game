@@ -1,0 +1,29 @@
+{
+  "name": "glob-game",
+  "version": "1.0.0",
+  "description": "Agar.io clone written in python and javascript using WebGPU",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "start": "webpack && python server/server.py"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1Axen/glob-game.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/1Axen/glob-game/issues"
+  },
+  "homepage": "https://github.com/1Axen/glob-game#readme",
+  "devDependencies": {
+    "webpack": "^5.102.1",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.8.1"
+  }
+}
