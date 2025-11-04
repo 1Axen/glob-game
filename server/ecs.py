@@ -221,3 +221,82 @@ class World():
 
         del entities[last_row]
         del entity_index[entity]
+
+class Query():
+    world: World
+    filter_with: List[ComponentId]
+
+    index: int = -1
+    last_archetype: int = -1
+    matched_archetypes: List[Archetype]
+
+    def __init__(self, world: World, filter_with: List[ComponentId]):
+        self.world = world
+        self.filter_with = filter_with
+        self.matched_archetypes = []
+
+    def __iter__(self):
+        world = self.world
+        filter_with = self.filter_with
+        archetypes = world.archetypes
+        component_index = world.component_index
+
+        smallest_record: ComponentRecord | None = None
+        for component in filter_with:
+            record = component_index[component]
+
+            if smallest_record == None:
+                smallest_record = record
+            elif len(record) < len(smallest_record):
+                smallest_record = record
+
+        if smallest_record != None:
+            matched_archetypes = self.matched_archetypes
+            for archetype_id in smallest_record:
+                archetype = archetypes[archetype_id]
+                columns_map = archetype.columns_map
+
+                doesnt_match = False
+                for component in filter_with:
+                    if not component in columns_map:
+                        doesnt_match = True
+                        break
+                
+                if doesnt_match:
+                    continue
+
+                matched_archetypes.append(archetype)
+
+        return self
+    
+    def __next__(self):
+        index = self.index
+        last_archtype = self.last_archetype
+        matched_archetypes = self.matched_archetypes
+        
+        while index == -1:
+            last_archtype += 1
+            self.last_archetype = last_archtype
+
+            if last_archtype >= len(matched_archetypes):
+                raise StopIteration
+            
+            archetype = matched_archetypes[last_archtype]
+            entities = archetype.entities
+            index = len(entities) - 1
+
+            if index == -1:
+                continue
+
+
+        self.index = (index - 1)
+        archetype = matched_archetypes[last_archtype]
+        columns_map = archetype.columns_map
+
+        entity = archetype.entities[index]
+        values = []
+
+        for component in self.filter_with:
+            values.append(columns_map[component][index])
+
+        return entity, *values
