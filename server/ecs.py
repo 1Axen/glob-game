@@ -117,9 +117,7 @@ class World():
                 
             last_entity = source_entities[source_last_row]
             source_entities[source_row] = last_entity
-            
-            last_entity_record = self.entity_index[last_entity]
-            last_entity_record.row = source_row
+            self.entity_index[last_entity].row = source_row
         else:
             for index, column in enumerate(source_columns):
                 component = source_types[index]
@@ -198,5 +196,28 @@ class World():
         to_archetype = self.__archetype_ensure(types)
         self.__entity_move(entity, record, to_archetype)
 
-        
-world = World()
+    def delete(self, entity: EntityId):
+        entity_index = self.entity_index
+        record = entity_index[entity]
+
+        row = record.row
+        archetype = record.archetype
+
+        columns = archetype.columns
+        entities = archetype.entities
+        last_row = len(archetype.entities) - 1
+
+        if row == last_row:
+            for column in columns:
+                del column[row]
+        else:
+            for column in columns:
+                column[row] = column[last_row]
+                del column[last_row]
+
+            last_entity = entities[last_row]
+            entities[row] = entities[last_row]
+            entity_index[last_entity].row = row
+
+        del entities[last_row]
+        del entity_index[entity]
