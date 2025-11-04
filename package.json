@@ -4,9 +4,10 @@
   "description": "Agar.io clone written in python and javascript using WebGPU",
   "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack",
-    "start": "webpack && python server/server.py"
+    "prestart": "webpack &",
+    "start": "python server/server.py",
+    "poststart": "kill $(jobs -p)"
   },
   "repository": {
     "type": "git",
