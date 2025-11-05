@@ -1,3 +1,4 @@
+import * as config from "../config.json"
 function is_valid_username(username: string) {
     const pattern = /^\w*$/;
     return pattern.exec(username) !== null;

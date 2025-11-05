@@ -1,0 +1,15 @@
+{
+    "server": {
+        "hostname": "0.0.0.0",
+        "port": 8080,
+        "update_rate": 20
+    },
+    "game": {
+        "width": 4096,
+        "height": 4096,
+        "minimum_mass": 16,
+        "starting_mass": 32,
+        "maximum_food": 1014,
+        "maximum_viruses": 48
+    }
+}
