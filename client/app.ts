@@ -56,8 +56,8 @@ window.onload = async function() {
     function disconnect() {
         ticker.stop()
         socket.close()
-        game_area.style.opacity = "0"
-        start_menu.style.opacity = "1"
+        game_area.style.visibility = "visible"
+        start_menu.style.visibility = "hidden"
     }
 
     socket.on("disconnect", disconnect)
@@ -68,11 +68,11 @@ window.onload = async function() {
             return
         } 
 
-        ticker.start();
-        start_menu.style.opacity = "0"
+        ticker.start()
+        start_menu.style.visibility = "hidden"
 
         await socket.emit("respawn", username)
-        game_area.style.opacity = "1"
+        game_area.style.visibility = "visible"
     })
 
     ticker.add((ticker) => {
