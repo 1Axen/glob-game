@@ -6,7 +6,7 @@
   "scripts": {
     "build": "webpack",
     "prestart": "webpack &",
-    "start": "python3 server/server.py",
+    "start": "python server/server.py",
     "poststart": "kill $(jobs -p)"
   },
   "repository": {
@@ -27,6 +27,7 @@
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {
+    "pixi-viewport": "^6.0.3",
     "pixi.js": "^8.14.0",
     "socket.io-client": "^4.8.1"
   }

@@ -1,7 +1,30 @@
+import { Viewport } from "pixi-viewport";
 import * as config from "../config.json"
-import { Application, Ticker } from "pixi.js";
-import Renderer from "./renderer";
+import { Application, autoDetectRenderer, Ticker, WebGPURenderer } from "pixi.js";
 import { io } from "socket.io-client";
+import GameScene from "./game_scene";
+
+const {width: world_width, height: world_height} = config.game
+
+async function create_renderer() {
+    const renderer = await autoDetectRenderer({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        antialias: true,
+        resolution: window.devicePixelRatio,
+        preference: "webgl",
+        backgroundColor: "#F2F3F4"
+    })
+
+    const canvas = renderer.canvas
+    canvas.style.position = "fixed"
+    canvas.style.width = "100vw"
+    canvas.style.height = "100vh"
+    canvas.style.top = "0"
+    canvas.style.left = "0"
+
+    return renderer
+}
 
 function is_valid_username(username: string) {
     const pattern = /^\w*$/;
@@ -37,21 +60,19 @@ window.onload = async function() {
     const game_area = document.getElementById("gameArea") as HTMLElement
     const start_menu = document.getElementById("startMenu") as HTMLElement
 
-    const app = new Application()
-    await app.init({ 
-        width: config.game.width,
-        height: config.game.height,
-        background: "#ffffff",
-        autoStart: false,
-        sharedTicker: false,
-        resolution: Math.max(1, window.devicePixelRatio)
-    })
-
-    game_area.appendChild(app.canvas)
-    
     const socket = await io()
-    const ticker = app.ticker
-    const renderer = new Renderer(app)
+    const ticker = new Ticker()
+    const renderer = await create_renderer()
+    game_area.appendChild(renderer.canvas)
+
+    const viewport = new Viewport({
+        screenWidth: window.innerWidth,
+        screenHeight: window.innerHeight,
+        worldWidth: world_width,
+        worldHeight: world_height,
+        events: renderer.events
+    })
+    const game_scene = new GameScene(viewport)
 
     function disconnect() {
         ticker.stop()
@@ -62,6 +83,16 @@ window.onload = async function() {
 
     socket.on("disconnect", disconnect)
     socket.on("connect_error", disconnect)
+    ticker.add((ticker) => {
+        renderer.render(viewport)
+    })
+    window.addEventListener("resize", () => {
+        renderer.resize(window.innerWidth, window.innerHeight)
+        viewport.resize(window.innerWidth, window.innerHeight)
+    })
+
+    game_scene.drawGrid()
+    viewport.moveCenter(world_width / 2, world_height / 2)
 
     setup_menu(async (username: string) => {
         if (ticker.started) {
@@ -73,9 +104,5 @@ window.onload = async function() {
 
         await socket.emit("respawn", username)
         game_area.style.visibility = "visible"
-    })
-
-    ticker.add((ticker) => {
-        
     })
 }
