@@ -119,6 +119,7 @@ div {
     width: 100%;
     height: 100%;
     visibility: hidden;
+    z-index: 0;
 }
 
 #status {
@@ -131,6 +132,7 @@ div {
     right: 10px;
     font-weight: bold;
     text-align: center;
+    z-index: 10;
 }
 
 #status .title {
@@ -163,8 +165,9 @@ div {
 }
 
 @media only screen  and (min-width : 1224px) {
-#mobile {
-display: none;
+    #mobile {
+        visibility: hidden;
+        z-index: 10;
 	}
 }
 

@@ -22,6 +22,7 @@ async function create_renderer() {
     canvas.style.height = "100vh"
     canvas.style.top = "0"
     canvas.style.left = "0"
+    canvas.style.zIndex = "1"
 
     return renderer
 }
