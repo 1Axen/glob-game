@@ -14,14 +14,22 @@ html, body, canvas {
     margin: 0;
     padding: 0;
     background: rgba(0, 0, 0, 0.4);
-
 }
 
 div {
+    user-select: none;
     -webkit-user-select: none; /* webkit (safari, chrome) browsers */
     -moz-user-select: none; /* mozilla browsers */
     -khtml-user-select: none; /* webkit (konqueror) browsers */
     -ms-user-select: none; /* IE10+ */
+}
+
+#startMenuBackground {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 20;
 }
 
 #startMenu {
@@ -35,7 +43,6 @@ div {
     -webkit-border-radius: 5px;
     background-color: white;
     box-sizing: border-box;
-    z-index: 2;
 }
 
 #startMenu p {
@@ -118,7 +125,6 @@ div {
     left: 0;
     width: 100%;
     height: 100%;
-    visibility: hidden;
     z-index: 0;
 }
 

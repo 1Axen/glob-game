@@ -51,9 +51,11 @@ export default class GameScene {
 
         this.food_container = food_container
         this.glob_container = glob_container
+
+        this.draw_grid()
     }
 
-    drawGrid() {
+    draw_grid() {
         const viewport = this.viewport
         const texture = create_grid_texture(32, 1, "#6d6d6d")
         const sprite = new TilingSprite({

@@ -59,7 +59,7 @@ function setup_menu(on_start: (username: string) => void) {
 
 window.onload = async function() {
     const game_area = document.getElementById("gameArea") as HTMLElement
-    const start_menu = document.getElementById("startMenu") as HTMLElement
+    const start_menu = document.getElementById("startMenuBackground") as HTMLElement
 
     const socket = await io()
     const ticker = new Ticker()
@@ -73,6 +73,8 @@ window.onload = async function() {
         worldHeight: world_height,
         events: renderer.events
     })
+    viewport.moveCenter(world_width / 2, world_height / 2)
+
     const game_scene = new GameScene(viewport)
 
     function disconnect() {
@@ -87,22 +89,15 @@ window.onload = async function() {
     ticker.add((ticker) => {
         renderer.render(viewport)
     })
+
     window.addEventListener("resize", () => {
         renderer.resize(window.innerWidth, window.innerHeight)
         viewport.resize(window.innerWidth, window.innerHeight)
     })
 
-    game_scene.drawGrid()
-    viewport.moveCenter(world_width / 2, world_height / 2)
-
+    ticker.start()
     setup_menu(async (username: string) => {
-        if (ticker.started) {
-            return
-        } 
-
-        ticker.start()
         start_menu.style.visibility = "hidden"
-
         await socket.emit("respawn", username)
         game_area.style.visibility = "visible"
     })
