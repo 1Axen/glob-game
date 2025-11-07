@@ -12,7 +12,7 @@ async function create_renderer() {
         height: window.innerHeight,
         antialias: true,
         resolution: window.devicePixelRatio,
-        preference: "webgl",
+        preference: "webgpu",
         backgroundColor: "#F2F3F4"
     })
 
