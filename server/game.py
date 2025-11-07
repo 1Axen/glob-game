@@ -1,5 +1,5 @@
 import socketio
-from ecs import World, Query, EntityId
+from ecs import World, Query, Id
 from time import time
 from asyncio import sleep
 from typing import List, Dict, NamedTuple
@@ -12,7 +12,7 @@ sio = socketio.AsyncServer()
 world = World()
 
 # types
-Food = world.component()
+Food = world.entity()
 Session = world.component()
 
 # metadata
@@ -23,7 +23,7 @@ Mass = world.component()
 Position = world.component()
 MoveDirection = world.component()
 
-SID_ENTITY_MAP: Dict[str, EntityId] = {}
+SID_ENTITY_MAP: Dict[str, Id] = {}
 
 @sio.event
 def connect(sid, environ):

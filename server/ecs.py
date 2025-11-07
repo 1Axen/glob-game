@@ -1,19 +1,18 @@
 from typing import List, Dict, NamedTuple, Set
 
-EntityId = int
-ComponentId = int
+Id = int
 ArchetypeId = int
 
 Type = str
-Types = List[ComponentId]
+Types = List[Id]
 Column = List
 class Archetype(NamedTuple):
     id: ArchetypeId
     type: Type
     types: Types
     columns: List[Column]
-    columns_map: Dict[ComponentId, Column]
-    entities: List[EntityId]
+    columns_map: Dict[Id, Column]
+    entities: List[Id]
 
 Archetypes = Dict[ArchetypeId, Archetype]
 ArchetypeIndex = Dict[Type, Archetype]
@@ -26,18 +25,34 @@ class Record():
         self.archetype = archetype
         self.row = row
 
-EntityIndex = Dict[EntityId, Record]
+EntityIndex = Dict[Id, Record]
 
-ComponentRecord = Dict[ArchetypeId, int]
-ComponentIndex = Dict[ComponentId, ComponentRecord]
+class ComponentRecord():
+    size: int = 0
+    is_tag: bool
+    archetypes: Dict[ArchetypeId, int]
 
+    def __init__(self, is_tag: bool):
+        self.is_tag = is_tag
+        self.archetypes = {}
+
+ComponentIndex = Dict[Id, ComponentRecord]
+
+TAG_COLUMN = []
+MAX_COMPONENT_ID = 256
 ROOT_ARCHETYPE_ID = 0
 ROOT_ARCHETYPE_TYPE = ""
+
+EcsComponent = MAX_COMPONENT_ID + 1
+EcsRest = MAX_COMPONENT_ID + 2
+
+def is_tag_column(column: List) -> bool:
+    return id(column) == id(TAG_COLUMN)
 
 def hash_types(types: Types) -> Type:
     return "_".join([str(id) for id in types])
 
-def find_insert(types: Types, to_add: ComponentId) -> int:
+def find_insert(types: Types, to_add: Id) -> int:
     for index, id in enumerate(types):
         if id == to_add:
             return -1
@@ -55,11 +70,28 @@ class World():
     def __init__(self):
         root_archetype = Archetype(ROOT_ARCHETYPE_ID, ROOT_ARCHETYPE_TYPE, [], [], {}, [])
 
+        self.index = 0
         self.archetypes = {ROOT_ARCHETYPE_ID: root_archetype}
         self.entity_index = {}
         self.component_index = {}
         self.archetype_index = {ROOT_ARCHETYPE_TYPE: root_archetype}
         self.root_archetype = root_archetype
+
+        for _ in range(0, EcsRest):
+            self.entity()
+
+    def __component_record_create(self, component: Id) -> ComponentRecord:
+        is_tag = not self.has(component, EcsComponent)
+        record = ComponentRecord(is_tag)
+        self.component_index[component] = record
+        return record
+
+    def __component_record_ensure(self, component: Id) -> ComponentRecord:
+        component_record = self.component_index.get(component, None)
+        if (component_record != None):
+            return component_record
+        
+        return self.__component_record_create(component)
 
     def __archetype_create(self, types: Types, type: Type) -> Archetype:
         archetype_id = len(self.archetypes)
@@ -69,10 +101,14 @@ class World():
         columns_map = archetype.columns_map
 
         for index, component in enumerate(types):
-            column = []
+            component_record = self.__component_record_ensure(component)
+
+            column = TAG_COLUMN if component_record.is_tag else []
             columns.append(column)
             columns_map[component] = column
-            self.component_index[component][archetype_id] = index
+
+            component_record.size += 1
+            component_record.archetypes[archetype_id] = index
 
         self.archetypes[archetype_id] = archetype
         self.archetype_index[type] = archetype
@@ -90,13 +126,13 @@ class World():
         
         return self.__archetype_create(types, type)
     
-    def __archetype_append(self, entity: EntityId, archetype: Archetype) -> int:
+    def __archetype_append(self, entity: Id, archetype: Archetype) -> int:
         entities = archetype.entities
         row = len(entities)
         entities.append(entity)
         return row
     
-    def __entity_move(self, entity: EntityId, record: Record, to: Archetype):
+    def __entity_move(self, entity: Id, record: Record, to: Archetype):
         source = record.archetype
         source_row = record.row
         source_types = source.types
@@ -109,6 +145,9 @@ class World():
 
         if source_row != source_last_row:
             for index, column in enumerate(source_columns):
+                if (is_tag_column(column)):
+                    continue
+
                 component = source_types[index]
                 to_column = to_columns_map.get(component)
 
@@ -123,6 +162,9 @@ class World():
             self.entity_index[last_entity].row = source_row
         else:
             for index, column in enumerate(source_columns):
+                if (is_tag_column(column)):
+                    continue
+
                 component = source_types[index]
                 to_column = to_columns_map.get(component)
 
@@ -136,7 +178,7 @@ class World():
         record.archetype = to
         record.row = to_row
 
-    def entity(self) -> EntityId:
+    def entity(self) -> Id:
         entity_index = self.entity_index
         root_archetype = self.root_archetype
 
@@ -146,20 +188,20 @@ class World():
 
         return entity_id
     
-    def component(self) -> ComponentId:
+    def component(self) -> Id:
         component_index = self.component_index
 
-        component_id = len(component_index) + 1
-        component_index[component_id] = {}
+        component_id = len(component_index)
+        self.add(component_id, EcsComponent)
 
         return component_id
     
-    def has(self, entity: EntityId, component: ComponentId) -> bool:
+    def has(self, entity: Id, component: Id) -> bool:
         record = self.entity_index[entity]
         archetype = record.archetype
         return component in archetype.columns_map
 
-    def get(self, entity: EntityId, component: ComponentId):
+    def get(self, entity: Id, component: Id):
         record = self.entity_index[entity]
         archetype = record.archetype
 
@@ -167,9 +209,27 @@ class World():
         if not (component in columns_map):
             return None
         
-        return columns_map[component][record.row]
+        column = columns_map[component]
+        if (is_tag_column(column)):
+            return None
+        
+        return column[record.row]
     
-    def set(self, entity: EntityId, component: ComponentId, value):
+    def add(self, entity: Id, component: Id):
+        record = self.entity_index[entity]
+        archetype = record.archetype
+
+        if (component in archetype.columns_map):
+            return
+        
+        types = archetype.types.copy()
+        insert_at = find_insert(types, component)
+        types.insert(insert_at, component)
+
+        to_archetype = self.__archetype_ensure(types)
+        self.__entity_move(entity, record, to_archetype)
+
+    def set(self, entity: Id, component: Id, value):
         record = self.entity_index[entity]
         archetype = record.archetype
 
@@ -183,14 +243,15 @@ class World():
             archetype = to_archetype
                 
         column = archetype.columns_map[component]
-        column.insert(record.row, value)
+        if (not is_tag_column(column)):
+            column.insert(record.row, value)
 
-    def remove(self, entity: EntityId, component: ComponentId):
+    def remove(self, entity: Id, component: Id):
         record = self.entity_index[entity]
         archetype = record.archetype
 
         component_record = self.component_index[component]
-        index = component_record.get(archetype.id, None)
+        index = component_record.archetypes.get(archetype.id, None)
         if (index == None):
             return
         
@@ -200,7 +261,7 @@ class World():
         to_archetype = self.__archetype_ensure(types)
         self.__entity_move(entity, record, to_archetype)
 
-    def delete(self, entity: EntityId):
+    def delete(self, entity: Id):
         entity_index = self.entity_index
         record = entity_index[entity]
 
@@ -213,9 +274,15 @@ class World():
 
         if row == last_row:
             for column in columns:
+                if (is_tag_column(column)):
+                    continue
+
                 del column[row]
         else:
             for column in columns:
+                if (is_tag_column(column)):
+                    continue
+
                 column[row] = column[last_row]
                 del column[last_row]
 
@@ -228,13 +295,13 @@ class World():
 
 class Query():
     world: World
-    filter_with: List[ComponentId]
+    filter_with: List[Id]
 
     index: int = -1
     last_archetype: int = -1
     matched_archetypes: List[Archetype]
 
-    def __init__(self, world: World, filter_with: List[ComponentId]):
+    def __init__(self, world: World, filter_with: List[Id]):
         self.world = world
         self.filter_with = filter_with
         self.matched_archetypes = []
@@ -247,16 +314,16 @@ class Query():
 
         smallest_record: ComponentRecord | None = None
         for component in filter_with:
-            record = component_index[component]
+            component_record = component_index[component]
 
             if smallest_record == None:
-                smallest_record = record
-            elif len(record) < len(smallest_record):
-                smallest_record = record
+                smallest_record = component_record
+            elif component_record.size < smallest_record.size:
+                smallest_record = component_record
 
         if smallest_record != None:
             matched_archetypes = self.matched_archetypes
-            for archetype_id in smallest_record:
+            for archetype_id in smallest_record.archetypes:
                 archetype = archetypes[archetype_id]
                 columns_map = archetype.columns_map
 
@@ -292,7 +359,6 @@ class Query():
             if index == -1:
                 continue
 
-
         self.index = (index - 1)
         archetype = matched_archetypes[last_archtype]
         columns_map = archetype.columns_map
@@ -301,6 +367,8 @@ class Query():
         values = []
 
         for component in self.filter_with:
-            values.append(columns_map[component][index])
+            column = columns_map[component]
+            value = None if is_tag_column(column) else column[index] 
+            values.append(value)
 
         return entity, *values
