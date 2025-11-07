@@ -33,7 +33,6 @@ ComponentIndex = Dict[ComponentId, ComponentRecord]
 
 ROOT_ARCHETYPE_ID = 0
 ROOT_ARCHETYPE_TYPE = ""
-ROOT_ARCHETYPE = Archetype(ROOT_ARCHETYPE_ID, ROOT_ARCHETYPE_TYPE, [], [], {}, [])
 
 def hash_types(types: Types) -> Type:
     return "_".join([str(id) for id in types])
@@ -51,12 +50,16 @@ class World():
     entity_index: EntityIndex
     component_index: ComponentIndex
     archetype_index: ArchetypeIndex
+    root_archetype: Archetype
 
     def __init__(self):
-        self.archetypes = {ROOT_ARCHETYPE_ID: ROOT_ARCHETYPE}
+        root_archetype = Archetype(ROOT_ARCHETYPE_ID, ROOT_ARCHETYPE_TYPE, [], [], {}, [])
+
+        self.archetypes = {ROOT_ARCHETYPE_ID: root_archetype}
         self.entity_index = {}
         self.component_index = {}
-        self.archetype_index = {ROOT_ARCHETYPE_TYPE: ROOT_ARCHETYPE}
+        self.archetype_index = {ROOT_ARCHETYPE_TYPE: root_archetype}
+        self.root_archetype = root_archetype
 
     def __archetype_create(self, types: Types, type: Type) -> Archetype:
         archetype_id = len(self.archetypes)
@@ -78,7 +81,7 @@ class World():
 
     def __archetype_ensure(self, types: Types) -> Archetype:
         if len(types) < 1:
-            return ROOT_ARCHETYPE
+            return self.root_archetype
         
         type = hash_types(types)
         archetype = self.archetype_index.get(type)
@@ -133,13 +136,13 @@ class World():
         record.archetype = to
         record.row = to_row
 
-
     def entity(self) -> EntityId:
         entity_index = self.entity_index
+        root_archetype = self.root_archetype
 
         entity_id = len(entity_index)
-        row = self.__archetype_append(entity_id, ROOT_ARCHETYPE)
-        entity_index[entity_id] = Record(ROOT_ARCHETYPE, row)
+        row = self.__archetype_append(entity_id, root_archetype)
+        entity_index[entity_id] = Record(root_archetype, row)
 
         return entity_id
     
