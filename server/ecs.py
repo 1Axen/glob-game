@@ -189,10 +189,11 @@ class World():
         record = self.entity_index[entity]
         archetype = record.archetype
 
-        if not (component in archetype.columns_map):
+        component_record = self.component_index[component]
+        index = component_record.get(archetype.id, None)
+        if (index == None):
             return
         
-        index = archetype.types.index(component)
         types = archetype.types.copy()
         types.pop(index)
 
