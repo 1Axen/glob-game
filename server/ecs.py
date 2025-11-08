@@ -314,7 +314,9 @@ class Query():
 
         smallest_record: ComponentRecord | None = None
         for component in filter_with:
-            component_record = component_index[component]
+            component_record = component_index.get(component, None)
+            if component_record == None:
+                continue
 
             if smallest_record == None:
                 smallest_record = component_record
