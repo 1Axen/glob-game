@@ -295,13 +295,13 @@ class World():
 
 class Query():
     world: World
-    filter_with: List[Id]
+    filter_with: Tuple[Id, ...]
 
     index: int = -1
     last_archetype: int = -1
     matched_archetypes: List[Archetype]
 
-    def __init__(self, world: World, filter_with: List[Id]):
+    def __init__(self, world: World, *filter_with: Id):
         self.world = world
         self.filter_with = filter_with
         self.matched_archetypes = []
