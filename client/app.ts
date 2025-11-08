@@ -1,6 +1,6 @@
 import { Viewport } from "pixi-viewport";
 import * as config from "../config.json"
-import { Application, autoDetectRenderer, Ticker, WebGPURenderer } from "pixi.js";
+import { autoDetectRenderer, Ticker } from "pixi.js";
 import { io } from "socket.io-client";
 import GameScene from "./game_scene";
 
