@@ -1,7 +1,7 @@
 import { Viewport } from "pixi-viewport"
 import { Application, Container, Texture, TextureUvs, TilingSprite, View } from "pixi.js"
 
-function create_container(viewport: Viewport, zindex: number): Container {
+function create_container(viewport: Viewport): Container {
     const {worldWidth: world_width, worldHeight: world_height} = viewport
     const container = new Container({
         width: world_width,
@@ -10,7 +10,7 @@ function create_container(viewport: Viewport, zindex: number): Container {
         y: world_height / 2,
     })
 
-    container.zIndex = zindex
+    container.zIndex = 1
     container.pivot.x = container.width / 2
     container.pivot.y = container.height / 2
 
@@ -40,18 +40,12 @@ function create_grid_texture(size: number, thickness: number, color: string) {
 
 export default class GameScene {
     viewport: Viewport
-    food_container: Container
-    glob_container: Container
+    container: Container
 
     constructor(viewport: Viewport) {
         this.viewport = viewport
-
-        const food_container = create_container(viewport, 2)
-        const glob_container = create_container(viewport, 3)
-
-        this.food_container = food_container
-        this.glob_container = glob_container
-
+        this.container = create_container(viewport)
+    
         this.draw_grid()
     }
 
