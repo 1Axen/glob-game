@@ -1,4 +1,5 @@
-from typing import List, Dict, NamedTuple, Set
+from dataclasses import dataclass
+from typing import List, Dict, NamedTuple, Tuple
 
 Id = int
 ArchetypeId = int
@@ -17,13 +18,10 @@ class Archetype(NamedTuple):
 Archetypes = Dict[ArchetypeId, Archetype]
 ArchetypeIndex = Dict[Type, Archetype]
 
+@dataclass
 class Record():
     archetype: Archetype
     row: int
-
-    def __init__(self, archetype: Archetype, row: int):
-        self.archetype = archetype
-        self.row = row
 
 EntityIndex = Dict[Id, Record]
 
