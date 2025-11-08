@@ -3,6 +3,7 @@ import * as config from "../config.json"
 import { autoDetectRenderer, Ticker } from "pixi.js";
 import { io } from "socket.io-client";
 import GameScene from "./game_scene";
+import GameManager from "./game_manager";
 import { World } from "./ecs";
 import _ from "./components";
 
@@ -79,6 +80,7 @@ window.onload = async function() {
 
     const world = new World()
     const game_scene = new GameScene(world, viewport)
+    const game_manager = new GameManager(world, game_scene, socket)
 
     function disconnect() {
         ticker.stop()
@@ -90,6 +92,7 @@ window.onload = async function() {
     socket.on("disconnect", disconnect)
     socket.on("connect_error", disconnect)
     ticker.add((ticker) => {
+        game_manager.update(ticker)
         renderer.render(viewport)
     })
 
