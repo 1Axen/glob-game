@@ -1,5 +1,5 @@
 import { Viewport } from "pixi-viewport"
-import { Application, Container, Texture, TextureUvs, TilingSprite, View } from "pixi.js"
+import { World } from "./ecs"
 
 function create_container(viewport: Viewport): Container {
     const {worldWidth: world_width, worldHeight: world_height} = viewport
@@ -39,13 +39,14 @@ function create_grid_texture(size: number, thickness: number, color: string) {
 }
 
 export default class GameScene {
+    world: World
     viewport: Viewport
     container: Container
 
-    constructor(viewport: Viewport) {
+    constructor(world: World, viewport: Viewport) {
+        this.world = world
         this.viewport = viewport
         this.container = create_container(viewport)
-    
         this.draw_grid()
     }
 

@@ -3,6 +3,8 @@ import * as config from "../config.json"
 import { autoDetectRenderer, Ticker } from "pixi.js";
 import { io } from "socket.io-client";
 import GameScene from "./game_scene";
+import { World } from "./ecs";
+import _ from "./components";
 
 const {width: world_width, height: world_height} = config.game
 
@@ -75,7 +77,8 @@ window.onload = async function() {
     })
     viewport.moveCenter(world_width / 2, world_height / 2)
 
-    const game_scene = new GameScene(viewport)
+    const world = new World()
+    const game_scene = new GameScene(world, viewport)
 
     function disconnect() {
         ticker.stop()
