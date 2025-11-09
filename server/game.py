@@ -1,12 +1,11 @@
 import socketio
 from ecs import World, Id, Query, tag, component
+import vector
 from time import time
 from asyncio import sleep
-from typing import List, Dict, NamedTuple
+from typing import Dict
 
-class Vector2(NamedTuple):
-    x: float
-    y: float
+Vector = vector.Vector
 
 sio = socketio.AsyncServer()
 world = World()
@@ -49,8 +48,8 @@ def respawn(sid, name: str):
     entity = world.entity()
     world.set(entity, Name, name)
     world.set(entity, Mass, 10)
-    world.set(entity, Position, Vector2(0, 0))
-    world.set(entity, MoveDirection, Vector2(0, 1))
+    world.set(entity, Position, Vector(0, 0))
+    world.set(entity, MoveDirection, Vector(0, 1))
     world.set(entity, Session, sid)
     SID_ENTITY_MAP[sid] = entity
 
@@ -59,8 +58,8 @@ def respawn(sid, name: str):
 def move_players(delta_time: float):
     for entity, mass, position, move_direction in Query(world, [Mass, Position, MoveDirection]):
         speed = mass
-        velocity = Vector2(move_direction.x * speed * delta_time, move_direction.y * speed * delta_time)
-        position = Vector2(position.x + velocity.x, position.y + velocity.y)
+        velocity = Vector(move_direction.x * speed * delta_time, move_direction.y * speed * delta_time)
+        position = Vector(position.x + velocity.x, position.y + velocity.y)
         world.set(entity, Position, position)
 
 async def game_loop():
