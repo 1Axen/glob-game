@@ -306,8 +306,7 @@ export class World {
                     to_column.push(column[source_row])
                 }
 
-                column[source_row] = column[source_last_row]
-                column[source_last_row] = undefined
+                column[source_row] = column.pop()
             }
             
             const last_entity = source_entities[source_last_row]
@@ -325,11 +324,11 @@ export class World {
                     to_column.push(column[source_row])
                 }
 
-                column[source_last_row] = undefined
+                column.pop()
             }
         }
 
-        source_entities[source_last_row] = undefined
+        source_entities.pop()
 
         record.row = to_row
         record.archetype = to
