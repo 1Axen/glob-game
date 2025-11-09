@@ -9,7 +9,7 @@
         "height": 4096,
         "minimum_mass": 16,
         "starting_mass": 32,
-        "maximum_food": 1014,
+        "maximum_food": 1024,
         "maximum_viruses": 48
     }
 }
