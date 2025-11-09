@@ -1,9 +1,13 @@
 import socketio
 import asyncio
+import os
+from config import Config
 from aiohttp import web
 
 from game import sio, game_loop
 from router import route
+
+config = Config.from_file(os.path.join(os.path.dirname(__file__), "../config.json"))
 
 async def main():
     app = web.Application()
