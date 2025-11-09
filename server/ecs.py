@@ -44,6 +44,9 @@ ROOT_ARCHETYPE_TYPE = ""
 EcsComponent = MAX_COMPONENT_ID + 1
 EcsRest = MAX_COMPONENT_ID + 2
 
+max_prereg_tag = 0
+max_prereg_component = 0
+
 def is_tag_column(column: List) -> bool:
     return id(column) == id(TAG_COLUMN)
 
@@ -76,6 +79,12 @@ class World():
         self.root_archetype = root_archetype
 
         for _ in range(0, EcsRest):
+            self.entity()
+
+        for index in range(0, max_prereg_component):
+            self.add(index, EcsComponent)
+
+        for _ in range(EcsRest, EcsRest + max_prereg_tag):
             self.entity()
 
     def __component_record_create(self, component: Id) -> ComponentRecord:
@@ -372,3 +381,14 @@ class Query():
             values.append(value)
 
         return entity, *values
+
+def tag() -> Id:
+    global max_prereg_tag
+    max_prereg_tag += 1
+    return max_prereg_tag
+
+def component() -> Id:
+    global max_prereg_component
+    component_id = max_prereg_component
+    max_prereg_component += 1
+    return component_id

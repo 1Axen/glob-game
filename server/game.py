@@ -1,5 +1,5 @@
 import socketio
-from ecs import World, Query, Id
+from ecs import World, Id, Query, tag, component
 from time import time
 from asyncio import sleep
 from typing import List, Dict, NamedTuple
@@ -12,16 +12,17 @@ sio = socketio.AsyncServer()
 world = World()
 
 # types
-Food = world.entity()
-Session = world.component()
+Food = tag()
+Session = component()
 
 # metadata
-Name = world.component()
+Name = component()
 
 # physics
-Mass = world.component()
-Position = world.component()
-MoveDirection = world.component()
+Mass = component()
+Position = component()
+Velocity = component()
+MoveDirection = component()
 
 SID_ENTITY_MAP: Dict[str, Id] = {}
 
