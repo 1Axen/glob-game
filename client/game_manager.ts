@@ -23,6 +23,27 @@ function lerp(a: number, b: number, t: number): number {
     return a + (b - a) * t
 }
 
+function random_color(): Color {
+    return new Color({
+        r: Math.random() * 255,
+        g: Math.random() * 255,
+        b: Math.random() * 255,
+    })
+}
+
+function session_id_to_color(session_id: string): Color {
+    let hash = 0
+    for (let index = 0; index < session_id.length; index++) {
+        hash = session_id.charCodeAt(index) + ((hash << 5) - hash)
+    }
+
+    return new Color({
+        r: hash & 0xff, 
+        g: (hash >> 8) & 0xff, 
+        b: (hash >> 16) & 0xff
+    })
+}
+
 export default class GameManager {
     world: World
     clock: SyncedClock
@@ -76,7 +97,10 @@ export default class GameManager {
                 const point = new Point(position[0], position[1])
 
                 if (entity == undefined) {
-                    const shape = scene.glob(new Color("red"), name)
+                    const color = session_id != undefined 
+                        ? session_id_to_color(session_id) 
+                        : random_color()
+                    const shape = scene.glob(color, name)
 
                     entity = world.entity()
                     world.set(entity, Shape, shape)
