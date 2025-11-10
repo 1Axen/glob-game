@@ -23,7 +23,13 @@ class Record():
     archetype: Archetype
     row: int
 
-EntityIndex = Dict[Id, Record]
+class EntityIndex():
+    sparse: Dict[Id, Record]
+    size: int  = 0
+
+    def __init__(self) -> None:
+        self.sparse = {}
+        pass
 
 class ComponentRecord():
     size: int = 0
@@ -73,7 +79,7 @@ class World():
 
         self.index = 0
         self.archetypes = {ROOT_ARCHETYPE_ID: root_archetype}
-        self.entity_index = {}
+        self.entity_index = EntityIndex()
         self.component_index = {}
         self.archetype_index = {ROOT_ARCHETYPE_TYPE: root_archetype}
         self.root_archetype = root_archetype
@@ -166,7 +172,7 @@ class World():
                 
             last_entity = source_entities[source_last_row]
             source_entities[source_row] = last_entity
-            self.entity_index[last_entity].row = source_row
+            self.entity_index.sparse[last_entity].row = source_row
         else:
             for index, column in enumerate(source_columns):
                 if (is_tag_column(column)):
@@ -189,9 +195,11 @@ class World():
         entity_index = self.entity_index
         root_archetype = self.root_archetype
 
-        entity_id = len(entity_index)
+        entity_id = entity_index.size
+        entity_index.size += 1
+
         row = self.__archetype_append(entity_id, root_archetype)
-        entity_index[entity_id] = Record(root_archetype, row)
+        entity_index.sparse[entity_id] = Record(root_archetype, row)
 
         return entity_id
     
@@ -204,12 +212,12 @@ class World():
         return component_id
     
     def has(self, entity: Id, component: Id) -> bool:
-        record = self.entity_index[entity]
+        record = self.entity_index.sparse[entity]
         archetype = record.archetype
         return component in archetype.columns_map
 
     def get(self, entity: Id, component: Id):
-        record = self.entity_index[entity]
+        record = self.entity_index.sparse[entity]
         archetype = record.archetype
 
         columns_map = archetype.columns_map
@@ -223,7 +231,7 @@ class World():
         return column[record.row]
     
     def add(self, entity: Id, component: Id):
-        record = self.entity_index[entity]
+        record = self.entity_index.sparse[entity]
         archetype = record.archetype
 
         if (component in archetype.columns_map):
@@ -237,7 +245,7 @@ class World():
         self.__entity_move(entity, record, to_archetype)
 
     def set(self, entity: Id, component: Id, value):
-        record = self.entity_index[entity]
+        record = self.entity_index.sparse[entity]
         archetype = record.archetype
 
         if not (component in archetype.columns_map):
@@ -254,7 +262,7 @@ class World():
             column.insert(record.row, value)
 
     def remove(self, entity: Id, component: Id):
-        record = self.entity_index[entity]
+        record = self.entity_index.sparse[entity]
         archetype = record.archetype
 
         component_record = self.component_index[component]
@@ -270,7 +278,7 @@ class World():
 
     def delete(self, entity: Id):
         entity_index = self.entity_index
-        record = entity_index[entity]
+        record = entity_index.sparse[entity]
 
         row = record.row
         archetype = record.archetype
@@ -295,10 +303,10 @@ class World():
 
             last_entity = entities[last_row]
             entities[row] = entities[last_row]
-            entity_index[last_entity].row = row
+            entity_index.sparse[last_entity].row = row
 
         del entities[last_row]
-        del entity_index[entity]
+        del entity_index.sparse[entity]
 
 class Query():
     world: World

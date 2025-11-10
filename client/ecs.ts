@@ -22,7 +22,10 @@ interface Record {
     archetype: Archetype
 }
 
-type EntityIndex = Record[]
+interface EntityIndex {
+    size: number,
+    sparse: Map<Id, Record>
+}
 
 interface ComponentRecord {
     size: number,
@@ -191,7 +194,10 @@ export class World {
         archetype_index.set(ROOT_TYPE, ROOT_ARCHETYPE)
 
         this.archetypes = archetypes
-        this.entity_index = []
+        this.entity_index = {
+            size: 0,
+            sparse: new Map()
+        }
         this.component_index = []
         this.archetype_index = archetype_index
         this.root_archetype = ROOT_ARCHETYPE
@@ -311,7 +317,7 @@ export class World {
             
             const last_entity = source_entities[source_last_row]
             source_entities[source_row] = last_entity
-            entity_index[last_entity].row = source_row
+            entity_index.sparse.get(last_entity).row = source_row
         }
         else {
             for (const [index, column] of source_columns.entries()) {
@@ -338,12 +344,14 @@ export class World {
         const entity_index = this.entity_index
         const root_archetype = this.root_archetype
 
-        const entity_id = entity_index.length as Id
+        const entity_id = entity_index.size as Id
+        entity_index.size += 1
+
         const row = this.archetype_append(entity_id, root_archetype)
-        entity_index[entity_id] = {
+        entity_index.sparse.set(entity_id, {
             row: row,
             archetype: root_archetype
-        }
+        })
 
         return entity_id
     }
@@ -356,13 +364,13 @@ export class World {
     }
 
     has(entity: Id, component: Id): boolean {
-        const record = this.entity_index[entity]
+        const record = this.entity_index.sparse.get(entity)
         const archetype = record.archetype
         return archetype.columns_map.has(component)
     }
 
     add(entity: Id, component: Id<undefined>) {
-        const record = this.entity_index[entity]
+        const record = this.entity_index.sparse.get(entity)
         const archetype = record.archetype
         if (archetype.columns_map.has(component)) return;
 
@@ -375,7 +383,7 @@ export class World {
     }
 
     get<T>(entity: Id, component: Id<T>): T | undefined {
-        const record = this.entity_index[entity]
+        const record = this.entity_index.sparse.get(entity)
         const archetype = record.archetype
 
         const columns_map = archetype.columns_map
@@ -386,7 +394,7 @@ export class World {
     }
 
     set<T>(entity: Id, component: Id<T>, value: T) {
-        const record = this.entity_index[entity]
+        const record = this.entity_index.sparse.get(entity)
         const archetype = record.archetype
 
         var column = archetype.columns_map.get(component)
@@ -404,7 +412,7 @@ export class World {
     }
 
     remove(entity: Id, component: Id) {
-        const record = this.entity_index[entity]
+        const record = this.entity_index.sparse.get(entity)
         const archetype = record.archetype
 
         const component_record = this.component_index[component]
@@ -418,7 +426,7 @@ export class World {
 
     delete(entity: Id) {
         const entity_index = this.entity_index
-        const record = entity_index[entity]
+        const record = entity_index.sparse.get(entity)
 
         const row = record.row
         const archetype = record.archetype
@@ -442,11 +450,11 @@ export class World {
 
             const last_entity = entities[last_row]
             entities[row] = last_entity
-            entity_index[last_entity].row = row
+            entity_index.sparse.get(last_entity).row = row
         }
 
         entities.pop()
-        entity_index[entity] = null
+        entity_index.sparse.delete(entity)
     }
 
     query<A, B, C, D, E, F, G>(
