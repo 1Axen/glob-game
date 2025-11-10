@@ -17,7 +17,7 @@ async function create_renderer() {
         antialias: true,
         resolution: window.devicePixelRatio,
         preference: "webgpu",
-        backgroundColor: "#F2F3F4"
+        backgroundColor: "#101010ff"
     })
 
     const canvas = renderer.canvas
