@@ -1,5 +1,6 @@
 import socketio
 from ecs import World, Id, Query, tag, component
+import json
 import vector
 from config import Config
 from time import time
@@ -15,6 +16,7 @@ Session = component()
 
 # metadata
 Name = component()
+Parent = component()
 
 # physics
 Mass = component()
@@ -34,6 +36,28 @@ def move_globs(world: World, delta_time: float):
         velocity = Vector(move_direction.x * speed * delta_time, move_direction.y * speed * delta_time)
         position = Vector(position.x + velocity.x, position.y + velocity.y)
         world.set(entity, Position, position)
+
+def serialize_world(world: World, server_time: float) -> str:
+    globs = []
+    players = []
+    world_state = [server_time, players, globs]
+
+    player_index_map = {}
+
+    for entity, name, session in Query(world, Name, Session):
+        player_index = len(players)
+        player_index_map[entity] = player_index
+        players.append((name, session))
+
+    for entity, mass, position in Query(world, Mass, Position):
+        parent = world.get(entity, Parent)
+        player_index = -1
+        if parent != None:
+            player_index = player_index_map.get(parent)
+
+        globs.append((entity, mass, (position.x, position.y), player_index))
+
+    return json.dumps(world_state)
 
 class GameInstance():
     world: World
@@ -81,6 +105,7 @@ class GameInstance():
 
         glob = create_glob(world, self.config.game.starting_mass, Vector())
         world.add(glob, entity)
+        world.set(glob, Parent, entity)
         world.set(glob, Velocity, Vector())
         world.set(glob, MoveDirection, Vector())
 
@@ -92,13 +117,17 @@ class GameInstance():
 
         last_time = time()
         tick_rate = (1.0 / 20.0)
+        server_time = 0.0
 
         while True:
             curr_time = time()
             delta_time = curr_time - last_time
+            server_time += delta_time
             last_time = curr_time
 
             move_globs(world, delta_time)
+            world_state = serialize_world(world, server_time)
+            await socket.emit("snapshot", world_state)
 
             elapsed = time() - curr_time
             await sleep(max(0, tick_rate - elapsed))
