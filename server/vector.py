@@ -23,6 +23,9 @@ class Vector():
     
     def __floordiv__(self, scalar: float):
         return self.__class__(float(self.x // scalar), float(self.y // scalar))
+    
+    def __str__(self) -> str:
+        return f"<{self.x}, {self.y}>"
         
 
 EPSILON = 1E-5
