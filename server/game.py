@@ -79,7 +79,7 @@ class GameInstance():
         world = self.world
         world.set(entity, Name, name)
 
-        glob = create_glob(world, 10, Vector())
+        glob = create_glob(world, self.config.game.starting_mass, Vector())
         world.add(glob, entity)
         world.set(glob, Velocity, Vector())
         world.set(glob, MoveDirection, Vector())
