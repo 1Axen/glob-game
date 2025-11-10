@@ -169,6 +169,6 @@ export default class GameManager {
         this.interpolate_positions()
 
         scene.update_globs(ticker)
-        
+        scene.update_camera()
     }
 }

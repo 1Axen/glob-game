@@ -119,4 +119,31 @@ export default class GameScene {
             shape.zIndex = mass + 10
         }
     }
-}}
+
+    update_camera() {
+        const world = this.world
+        const viewport = this.viewport
+
+        var max_x = -Infinity
+        var min_x = Infinity
+        var max_y = -Infinity
+        var min_y = Infinity
+
+        for (const [_, shape] of world.query(Shape, LocalPlayer)) {
+            const half_width = shape.width / 2
+            const half_height = shape.height / 2
+
+            min_x = Math.min(shape.x - half_width, min_x)
+            min_y = Math.min(shape.y - half_height, min_y)
+            max_x = Math.max(shape.x + half_width, max_x)
+            max_y = Math.max(shape.y + half_height, max_y)
+        }
+
+        if (min_x == Infinity) {
+            viewport.moveCenter(viewport.screenWidth / 2, viewport.screenHeight / 2)
+            return
+        }
+
+        viewport.moveCenter((max_x + min_x) / 2, (max_y + min_y) / 2)
+    }
+}
