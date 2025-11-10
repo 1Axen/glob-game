@@ -90,8 +90,8 @@ window.onload = async function() {
     function disconnect() {
         ticker.stop()
         socket.close()
-        game_area.style.visibility = "visible"
-        start_menu.style.visibility = "hidden"
+        game_area.style.visibility = "hidden"
+        start_menu.style.visibility = "visible"
     }
 
     socket.on("disconnect", disconnect)
