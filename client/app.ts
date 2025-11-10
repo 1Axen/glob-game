@@ -6,6 +6,7 @@ import GameScene from "./game_scene";
 import GameManager from "./game_manager";
 import { World } from "./ecs";
 import _ from "./components";
+import { initDevtools } from '@pixi/devtools';
 
 const {width: world_width, height: world_height} = config.game
 
@@ -76,7 +77,11 @@ window.onload = async function() {
         worldHeight: world_height,
         events: renderer.events
     })
-    viewport.moveCenter(world_width / 2, world_height / 2)
+
+    initDevtools({
+        stage: viewport,
+        renderer: renderer
+    })
 
     const world = new World()
     const game_scene = new GameScene(world, viewport)
