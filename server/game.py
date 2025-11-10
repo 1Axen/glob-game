@@ -45,7 +45,7 @@ class GameInstance():
         self.world = world
         self.config = config
         self.socket = socket
-
+        self._entity_map = {}
         pass
 
     def connect(self, sid: str, environ):
