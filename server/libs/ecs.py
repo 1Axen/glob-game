@@ -50,7 +50,7 @@ ROOT_ARCHETYPE_TYPE = ""
 EcsComponent = MAX_COMPONENT_ID + 1
 EcsRest = MAX_COMPONENT_ID + 2
 
-max_prereg_tag = 0
+max_prereg_tag = EcsRest
 max_prereg_component = 0
 
 def is_tag_column(column: List) -> bool:
