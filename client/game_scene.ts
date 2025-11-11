@@ -101,21 +101,22 @@ export default class GameScene {
         return glob
     }
 
-    update_globs(ticker: Ticker) {
+    update_globs(delta_time: number) {
         const world = this.world
         const viewport = this.viewport
-        const delta_time = ticker.deltaTime
+        const {worldWidth: world_width, worldHeight: world_height} = viewport
 
-        for (const [entity, mass, position, shape] of world.query(Mass, Position, Shape)) {
+        const mass_fraction = Math.min(1, 16 * delta_time)
+        for (const [_, mass, position, shape] of world.query(Mass, Position, Shape)) {
             const curr_scale = shape.scale.x
             const target_scale = (mass / BASE_MASS)
-            var new_scale = lerp(curr_scale, target_scale, delta_time)
+            var new_scale = lerp(curr_scale, target_scale, mass_fraction)
             if (Math.abs(target_scale - new_scale) < EPSILON) {
                 new_scale = target_scale
             }
 
             shape.scale.set(new_scale)
-            shape.position.set(position.x + (viewport.worldWidth / 2), position.y + (viewport.worldHeight / 2))
+            shape.position.set(position.x + (world_width / 2), position.y + (world_height / 2))
             shape.zIndex = mass + 10
         }
     }

@@ -197,11 +197,12 @@ export default class GameManager {
 
     update(ticker: Ticker) {
         const scene = this.scene
+        const delta_time = ticker.deltaTime / 1000
 
-        this.clock.advance(ticker.deltaMS / 1000)
+        this.clock.advance(delta_time)
         this.interpolate_positions()
 
-        scene.update_globs(ticker)
+        scene.update_globs(delta_time)
         scene.update_camera()
     }
 }
