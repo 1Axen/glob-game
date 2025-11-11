@@ -5,6 +5,7 @@ import { Color, Point, Ticker } from "pixi.js";
 import { LocalPlayer, Mass, Player, Position, Shape } from "./components";
 import { server } from "../config.json"
 import SyncedClock from "./synced_clock";
+import { Viewport } from "pixi-viewport";
 
 type GlobData = [number, number, [number, number], number]
 type PlayerData = [string, string]
@@ -51,11 +52,13 @@ export default class GameManager {
     private socket: Socket
     private snapshots: Snapshot[]
 
-    constructor(world: World, scene: GameScene, socket: Socket) {
+    constructor(world: World, viewport: Viewport, socket: Socket) {
         const clock = new SyncedClock()
+        const scene = new GameScene(world, viewport)
         const snapshots: Snapshot[] = []
 
         this.clock = clock
+        this.scene = scene
         this.world = world
         this.scene = scene
         this.socket = socket

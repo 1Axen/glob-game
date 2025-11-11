@@ -84,8 +84,7 @@ window.onload = async function() {
     })
 
     const world = new World()
-    const game_scene = new GameScene(world, viewport)
-    const game_manager = new GameManager(world, game_scene, socket)
+    const game_manager = new GameManager(world, viewport, socket)
 
     function disconnect() {
         ticker.stop()
