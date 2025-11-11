@@ -62,8 +62,10 @@ export default class GameScene {
         const texture = create_grid_texture(32, 1, "#6d6d6d")
         const sprite = new TilingSprite({
            texture: texture,
-           width: viewport.worldWidth,
-           height: viewport.worldHeight
+           x: -viewport.worldWidth / 2,
+           y: -viewport.worldHeight / 2,
+           width: viewport.worldWidth * 2,
+           height: viewport.worldHeight * 2
         })
 
         sprite.zIndex = 0

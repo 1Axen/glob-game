@@ -24,8 +24,10 @@ export default class InputManager {
     constructor(world: World, viewport: Viewport) {
         const sprite = new Sprite({
             alpha: 1,
-            width: viewport.worldWidth,
-            height: viewport.worldHeight,
+            x: -viewport.worldWidth / 2,
+            y: -viewport.worldHeight / 2,
+            width: viewport.worldWidth * 2,
+            height: viewport.worldHeight * 2,
             eventMode: "static",
             zIndex: 999
         })
