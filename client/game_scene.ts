@@ -46,9 +46,9 @@ function create_grid_texture(size: number, thickness: number, color: string) {
 }
 
 export default class GameScene {
-    world: World
-    viewport: Viewport
-    container: Container
+    private world: World
+    private viewport: Viewport
+    private container: Container
 
     constructor(world: World, viewport: Viewport) {
         this.world = world

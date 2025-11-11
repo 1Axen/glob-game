@@ -45,10 +45,10 @@ function session_id_to_color(session_id: string): Color {
 }
 
 export default class GameManager {
-    world: World
-    clock: SyncedClock
-    scene: GameScene
-    socket: Socket
+    private world: World
+    private clock: SyncedClock
+    private scene: GameScene
+    private socket: Socket
     private snapshots: Snapshot[]
 
     constructor(world: World, scene: GameScene, socket: Socket) {
