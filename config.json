@@ -7,11 +7,18 @@
     "game": {
         "width": 4096,
         "height": 4096,
+
+        "maximum_speed": 128,
+        "minimum_speed": 16,
+
+        "maximum_mass": 512,
         "minimum_mass": 16,
         "starting_mass": 32,
 
         "food_mass": 8,
         "maximum_food": 1024,
-        "maximum_viruses": 48
+        "maximum_viruses": 48,
+
+        "mass_radius_constant": 24
     }
 }

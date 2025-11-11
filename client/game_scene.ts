@@ -7,7 +7,7 @@ import { game } from "../config.json"
 const EPSILON = 1E-2
 const FONT_SIZE = 14
 const BASE_MASS = game.minimum_mass
-const BASE_RADIUS = 24
+const BASE_RADIUS = game.mass_radius_constant
 
 function lerp(a: number, b: number, t: number): number {
     return a + (b - a) * t

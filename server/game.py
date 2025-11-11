@@ -25,15 +25,26 @@ Position = component()
 Velocity = component()
 MoveDirection = component()
 
+def map(x: float, inmin: float, inmax: float, outmin: float, outmax: float) -> float:
+    return outmin + (x - inmin) * (outmax - outmin) / (inmax - inmin)
+
+def speed_from_mass(config: Config, mass: float) -> float:
+    game_config = config.game
+    return map(
+        mass, 
+        game_config.minimum_mass, game_config.maximum_mass, 
+        game_config.maximum_speed, game_config.minimum_speed
+    )
+
 def create_glob(world: World, mass: int, position: Vector) -> Id:
     glob = world.entity()
     world.set(glob, Mass, mass)
     world.set(glob, Position, position)
     return glob
 
-def move_globs(world: World, delta_time: float):
+def move_globs(world: World, config: Config, delta_time: float):
     for entity, mass, position, move_direction in Query(world, Mass, Position, MoveDirection):
-        speed = mass
+        speed = speed_from_mass(config, mass)
         velocity = Vector(move_direction.x * speed * delta_time, move_direction.y * speed * delta_time)
         position = Vector(position.x + velocity.x, position.y + velocity.y)
         world.set(entity, Position, position)
@@ -124,8 +135,21 @@ class GameInstance():
 
         print(f"* created entity: {entity} ({name})")
 
+    def move(self, sid: str, direction: tuple[float, float]):
+        entity = self._entity_map.get(sid, None)
+        if entity == None:
+            raise Exception
+        
+        world = self.world
+        move_direction = Vector(*direction)
+        move_direction = vector.normalize(move_direction)
+
+        for glob_entity, _ in Query(world, entity):
+            world.set(glob_entity, MoveDirection, move_direction)
+
     async def init_game_loop(self):
         world = self.world
+        config = self.config
         socket = self.socket
 
         last_time = time()
@@ -138,7 +162,7 @@ class GameInstance():
             server_time += delta_time
             last_time = curr_time
 
-            move_globs(world, delta_time)
+            move_globs(world, config, delta_time)
             world_state = serialize_world(world, server_time)
             await socket.emit("snapshot", world_state)
 

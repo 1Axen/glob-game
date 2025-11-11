@@ -37,6 +37,10 @@ async def main():
     def respawn(sid, name):
         game_instance.respawn(sid, name)
 
+    @sio.event
+    def move(sid, direction):
+        game_instance.move(sid, direction)
+
     await game_instance.init_game_loop()
 
 if __name__ == "__main__":

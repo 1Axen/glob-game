@@ -59,7 +59,7 @@ export default class GameManager {
         this.socket = socket
         this.clock = new SyncedClock()
         this.scene = new GameScene(world, viewport)
-        this.input = new InputManager(viewport)
+        this.input = new InputManager(world, viewport)
         this.snapshots = []
 
         this.setup_snapshot_receive()
@@ -124,7 +124,7 @@ export default class GameManager {
                     }
                     
                     entities_map.set(id, entity)
-                    console.log("new entity(%d:%s:%s)", id, name, session_id)
+                    console.log("new entity(%d:%s:%s:%s)", id, name, session_id, world.has(entity, LocalPlayer) ? "local" : "remote")
                 }
 
                 world.set(entity, Mass, mass)
@@ -195,12 +195,18 @@ export default class GameManager {
         }
     }
 
+    replicate_move_direction() {
+        const move_direction = this.input.move_direction()
+        this.socket.emit("move", move_direction)
+    }
+
     update(ticker: Ticker) {
         const scene = this.scene
-        const delta_time = ticker.deltaTime / 1000
+        const delta_time = ticker.deltaMS / 1000
 
         this.clock.advance(delta_time)
         this.interpolate_positions()
+        this.replicate_move_direction()
 
         scene.update_globs(delta_time)
         scene.update_camera()
