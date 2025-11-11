@@ -9,10 +9,21 @@ class Vector():
         self.x = x
         self.y = y
 
-    def __add__(self, vector):
+    def __add__(self, vector_or_scalar):
+        if isinstance(vector_or_scalar, (int, float)):
+            scalar = vector_or_scalar
+            return self.__class__(self.x + scalar, self.y + scalar)
+
+        vector = vector_or_scalar
         return self.__class__(self.x + vector.x, self.y + vector.y)
+
     
-    def __sub__(self, vector):
+    def __sub__(self, vector_or_scalar):
+        if isinstance(vector_or_scalar, (int, float)):
+            scalar = vector_or_scalar
+            return self.__class__(self.x - scalar, self.y - scalar)
+
+        vector = vector_or_scalar
         return self.__class__(self.x - vector.x, self.y - vector.y)
 
     def __mul__(self, scalar: float):
