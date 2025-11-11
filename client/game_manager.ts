@@ -55,15 +55,24 @@ export default class GameManager {
     constructor(world: World, viewport: Viewport, socket: Socket) {
         const clock = new SyncedClock()
         const scene = new GameScene(world, viewport)
-        const snapshots: Snapshot[] = []
 
         this.clock = clock
         this.scene = scene
         this.world = world
         this.scene = scene
         this.socket = socket
-        this.snapshots = snapshots
+        this.snapshots = []
 
+        this.setup_snapshot_receive()
+    }
+
+    private setup_snapshot_receive() {
+        const scene = this.scene
+        const clock = this.clock
+        const world = this.world
+        const socket = this.socket
+        const snapshots = this.snapshots
+        
         const entities_map: Map<number, Id> = new Map()
         const local_session_id = socket.id
 
