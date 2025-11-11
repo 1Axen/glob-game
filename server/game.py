@@ -153,7 +153,7 @@ class GameInstance():
         socket = self.socket
 
         last_time = time()
-        tick_rate = (1.0 / 20.0)
+        tick_rate = (1.0 / config.server.update_rate)
         server_time = 0.0
 
         while True:
