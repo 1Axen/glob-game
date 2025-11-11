@@ -1,5 +1,6 @@
 import socketio
 from ecs import World, Id, Query, tag, component
+import random
 import json
 import vector
 from config import Config
@@ -70,6 +71,18 @@ class GameInstance():
         self.config = config
         self.socket = socket
         self._entity_map = {}
+
+        half_width = config.game.width // 2
+        half_height = config.game.height // 2
+        food_mass = config.game.food_mass
+        for _ in range(1, config.game.maximum_food):
+            position = Vector(
+                random.randint(-half_width, half_width), 
+                random.randint(-half_height, half_height)
+            )
+            entity = create_glob(world, food_mass, position)
+            world.add(entity, Food)
+
         pass
 
     def connect(self, sid: str, environ):
