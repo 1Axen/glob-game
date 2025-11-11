@@ -1,12 +1,12 @@
 import socketio
-from ecs import World, Id, Query, tag, component
+from libs.ecs import World, Id, Query, tag, component
 import random
 import json
-import vector
-from config import Config
+import libs.vector as vector
+from libs.config import Config
 from time import time
 from asyncio import sleep
-from typing import Dict
+from typing import Dict, List
 
 Vector = vector.Vector
 SocketServer = socketio.AsyncServer

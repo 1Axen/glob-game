@@ -1,8 +1,8 @@
 import socketio
 import asyncio
 import os
-from config import Config
-from ecs import World
+from libs.config import Config
+from libs.ecs import World
 from aiohttp import web
 from router import route
 from game import GameInstance

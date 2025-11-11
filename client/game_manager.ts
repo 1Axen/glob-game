@@ -1,10 +1,10 @@
 import { Socket } from "socket.io-client";
-import { Id, World } from "./ecs";
+import { Id, World } from "./libs/ecs";
 import GameScene from "./game_scene";
 import { Color, Point, Ticker } from "pixi.js";
 import { LocalPlayer, Mass, Player, Position, Shape } from "./components";
 import { server } from "../config.json"
-import SyncedClock from "./synced_clock";
+import SyncedClock from "./libs/synced_clock";
 import { Viewport } from "pixi-viewport";
 import InputManager from "./input_manager"
 
@@ -18,7 +18,7 @@ interface Snapshot {
 }
 
 const UPDATE_RATE = 1 / server.update_rate
-const INTERP_RATIO = 2
+const INTERP_RATIO = 1
 const MAX_SNAPSHOTS = server.update_rate
 
 function lerp(a: number, b: number, t: number): number {
@@ -54,7 +54,9 @@ export default class GameManager {
     private socket: Socket
     private snapshots: Snapshot[]
 
-    constructor(world: World, viewport: Viewport, socket: Socket) {
+    constructor(viewport: Viewport, socket: Socket) {
+        const world = new World()
+
         this.world = world
         this.socket = socket
         this.clock = new SyncedClock()

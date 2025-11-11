@@ -1,5 +1,5 @@
 import { Container, Graphics, Point } from "pixi.js"
-import { component, tag } from "./ecs"
+import { component, tag } from "./libs/ecs"
 
 export const Food = tag()
 export const Player = tag()

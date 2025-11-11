@@ -1,6 +1,6 @@
 import { Viewport } from "pixi-viewport"
 import { BitmapText, Color, Container, Graphics, Point, Texture, Ticker, TilingSprite } from "pixi.js"
-import { World } from "./ecs"
+import { World } from "./libs/ecs"
 import { LocalPlayer, Mass, Position, Shape } from "./components"
 import { game } from "../config.json"
 

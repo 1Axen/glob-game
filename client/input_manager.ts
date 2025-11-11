@@ -1,6 +1,6 @@
 import { Viewport } from "pixi-viewport";
 import { Point, Sprite } from "pixi.js";
-import { World } from "./ecs";
+import { World } from "./libs/ecs";
 import { LocalPlayer, Shape } from "./components";
 
 const MOVE_RADIUS = 64

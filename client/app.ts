@@ -2,9 +2,7 @@ import { Viewport } from "pixi-viewport";
 import * as config from "../config.json"
 import { autoDetectRenderer, Ticker } from "pixi.js";
 import { io } from "socket.io-client";
-import GameScene from "./game_scene";
 import GameManager from "./game_manager";
-import { World } from "./ecs";
 import _ from "./components";
 import { initDevtools } from '@pixi/devtools';
 
@@ -83,8 +81,7 @@ window.onload = async function() {
         renderer: renderer
     })
 
-    const world = new World()
-    const game_manager = new GameManager(world, viewport, socket)
+    const game_manager = new GameManager(viewport, socket)
 
     function disconnect() {
         ticker.stop()
