@@ -73,8 +73,6 @@ export default class GameManager {
         const snapshots = this.snapshots
         
         const entities_map: Map<number, Id> = new Map()
-        const local_session_id = socket.id
-
         socket.on("snapshot", (state_json: string) => {
             const state = JSON.parse(state_json) as WorldState
             const server_time = state[0]
@@ -121,7 +119,7 @@ export default class GameManager {
                         world.add(entity, Player)
                     }
                     
-                    if (session_id == local_session_id) {
+                    if (session_id == socket.id) {
                         world.add(entity, LocalPlayer)
                     }
                     
