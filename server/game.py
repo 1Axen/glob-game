@@ -142,7 +142,9 @@ class GameInstance():
         
         world = self.world
         move_direction = Vector(*direction)
-        move_direction = vector.normalize(move_direction)
+        
+        if (vector.magnitude(move_direction) != 0):
+            move_direction = vector.normalize(move_direction)
 
         for glob_entity, _ in Query(world, entity):
             world.set(glob_entity, MoveDirection, move_direction)
