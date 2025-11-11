@@ -17,7 +17,7 @@ async def main():
 
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", 8080)
+    site = web.TCPSite(runner, config.server.hostname, config.server.port)
     await site.start()
 
     world = World()
