@@ -28,6 +28,16 @@ MoveDirection = component()
 def map(x: float, inmin: float, inmax: float, outmin: float, outmax: float) -> float:
     return outmin + (x - inmin) * (outmax - outmin) / (inmax - inmin)
 
+def clamp(x: float, min: float, max: float) -> float:
+    if (x > max): 
+        return max
+    if (x < min):
+        return min
+    return x
+
+def mass_to_radius(config: Config, mass: float) -> float:
+    return mass * config.game.mass_radius_consant
+
 def speed_from_mass(config: Config, mass: float) -> float:
     game_config = config.game
     return map(
@@ -43,10 +53,15 @@ def create_glob(world: World, mass: int, position: Vector) -> Id:
     return glob
 
 def move_globs(world: World, config: Config, delta_time: float):
+    half_width = config.game.width / 2
+    half_height = config.game.height / 2
     for entity, mass, position, move_direction in Query(world, Mass, Position, MoveDirection):
         speed = speed_from_mass(config, mass)
         velocity = Vector(move_direction.x * speed * delta_time, move_direction.y * speed * delta_time)
-        position = Vector(position.x + velocity.x, position.y + velocity.y)
+        position = Vector(
+            clamp(position.x + velocity.x, -half_width, half_width), 
+            clamp(position.y + velocity.y, -half_height, half_height)
+        )
         world.set(entity, Position, position)
 
 def serialize_world(world: World, server_time: float) -> str:
