@@ -75,20 +75,20 @@ export default class GameScene {
 
     glob(color: Color, name?: string): Container {
         const glob = new Container({
-            width: BASE_RADIUS,
-            height: BASE_RADIUS,
-            pivot: new Point(BASE_RADIUS / 2, BASE_RADIUS / 2)
+            width: BASE_RADIUS * 2,
+            height: BASE_RADIUS * 2,
+            pivot: new Point(BASE_RADIUS, BASE_RADIUS)
         })
 
         glob.addChild(new Graphics({
-            width: BASE_RADIUS,
-            height: BASE_RADIUS,
-        }).circle(BASE_RADIUS / 2, BASE_RADIUS / 2, BASE_RADIUS).fill(color))
+            width: BASE_RADIUS * 2,
+            height: BASE_RADIUS * 2,
+        }).circle(BASE_RADIUS, BASE_RADIUS, BASE_RADIUS).fill(color))
 
         if (name != undefined) {
             glob.addChild(new BitmapText({
-                x: BASE_RADIUS / 2,
-                y: BASE_RADIUS / 2,
+                x: BASE_RADIUS,
+                y: BASE_RADIUS,
                 text: name,
                 style: {
                     fill: "#ffffff",
