@@ -41,6 +41,14 @@ def clamp(x: float, min: float, max: float) -> float:
         return min
     return x
 
+def point_to_vector(config: Config, point: tuple[float, float]) -> Vector:
+    max_x = config.game.width / 2
+    max_y = config.game.height / 2
+    return Vector(
+        clamp(point[0], -max_x, max_x),
+        clamp(point[1], -max_y, max_y)
+    )
+
 def mass_to_radius(config: Config, mass: float) -> float:
     return config.game.base_radius + mass * config.game.mass_radius_consant
 
@@ -235,21 +243,22 @@ class GameInstance():
 
         print(f"* created entity: {entity} ({name})")
 
-    def move(self, sid: str, direction: tuple[float, float]):
+    def move(self, sid: str, target_point: tuple[float, float]):
         entity = self._entity_map.get(sid, None)
         if entity == None:
             raise Exception
         
         world = self.world
-        move_direction = Vector(*direction)
-        
-        if (vector.magnitude(move_direction) != 0):
-            move_direction = vector.normalize(move_direction)
+        target_position = point_to_vector(self.config, target_point)
 
-        for glob_entity, _ in Query(world, entity):
-            world.set(glob_entity, MoveDirection, move_direction)
+        for glob_entity, position, _ in Query(world, Position, entity):
+            direction = (target_position - position)
+            if vector.magnitude(direction) > 1:
+                direction = vector.normalize(direction)
 
-    def shoot(self, sid: str, direction: tuple[float, float]):
+            world.set(glob_entity, MoveDirection, direction)
+
+    def shoot(self, sid: str, target_point: tuple[float, float]):
         entity = self._entity_map.get(sid, None)
         if entity == None:
             raise Exception
@@ -257,12 +266,7 @@ class GameInstance():
         world = self.world
         config = self.config
         vector_map = self.vector_map
-        shoot_direction = Vector(*direction)
-
-        if (vector.magnitude(shoot_direction) == 0):
-            shoot_direction = Vector(1, 0)
-        else:
-            shoot_direction = vector.normalize(shoot_direction)
+        target_position = point_to_vector(self.config, target_point)
 
         food_mass = config.game.food_mass
         food_diameter = mass_to_radius(config, config.game.food_mass) * 2 
@@ -272,29 +276,30 @@ class GameInstance():
             if (mass <= minimum_mass):
                 continue
 
+            direction = (target_position - position)
+            if (vector.magnitude(direction) == 0):
+                direction = Vector(1, 0)
+            else:
+                direction = vector.normalize(direction)
+
             radius = mass_to_radius(config, mass)
-            spawn_offset = (shoot_direction * (radius + food_diameter))
+            spawn_offset = (direction * (radius + food_diameter))
             spawn_position = position + spawn_offset
 
             food_entity = spawn_food(world, config, vector_map)
 
             world.set(glob_entity, Mass, max(minimum_mass, mass - food_mass))
             world.set(food_entity, Position, spawn_position)
-            world.set(food_entity, Velocity, shoot_direction * 512)
+            world.set(food_entity, Velocity, direction * 512)
 
-    def split(self, sid: str, direction: tuple[float, float]):
+    def split(self, sid: str, target_point: tuple[float, float]):
         entity = self._entity_map.get(sid, None)
         if entity == None:
             raise Exception
         
         world = self.world
         config = self.config
-        split_direction = Vector(*direction)
-
-        if (vector.magnitude(split_direction) == 0):
-            split_direction = Vector(1, 0)
-        else:
-            split_direction = vector.normalize(split_direction)
+        target_position = point_to_vector(self.config, target_point)
 
         minimum_mass = config.game.minimum_mass
         for glob_entity, mass, position, _ in Query(world, Mass, Position, entity):
@@ -302,8 +307,14 @@ class GameInstance():
             if (half_mass < minimum_mass):
                 continue
 
+            direction = (target_position - position)
+            if (vector.magnitude(direction) == 0):
+                direction = Vector(1, 0)
+            else:
+                direction = vector.normalize(direction)
+
             new_glob_entity = spawn_player(world, entity, half_mass, position)
-            world.set(new_glob_entity, Velocity, split_direction * 512)
+            world.set(new_glob_entity, Velocity, direction * 512)
             world.set(glob_entity, Mass, half_mass)
 
     async def init_game_loop(self):

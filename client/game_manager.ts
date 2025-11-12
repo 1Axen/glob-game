@@ -200,9 +200,8 @@ export default class GameManager {
         }
     }
 
-    replicate_move_direction() {
-        const move_direction = this.input.move_direction()
-        this.socket.emit("move", move_direction)
+    replicate_target_point() {
+        this.socket.emit("move", this.input.target_point())
     }
 
     private try_split(delta_time: number) {
@@ -217,7 +216,7 @@ export default class GameManager {
         }
 
         this.split_debounce = 0.1
-        this.socket.emit("split", this.input.move_direction())
+        this.socket.emit("split", this.input.target_point())
     }
 
     private try_shoot(delta_time: number) {
@@ -232,7 +231,7 @@ export default class GameManager {
         }
 
         this.shoot_debounce = 0.1
-        this.socket.emit("shoot", this.input.move_direction())
+        this.socket.emit("shoot", this.input.target_point())
     }
 
     update(ticker: Ticker) {
@@ -241,7 +240,7 @@ export default class GameManager {
 
         this.clock.advance(delta_time)
         this.interpolate_positions()
-        this.replicate_move_direction()
+        this.replicate_target_point()
         this.try_shoot(delta_time)
         this.try_split(delta_time)
 
