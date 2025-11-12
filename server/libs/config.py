@@ -8,15 +8,16 @@ class GameConfig(NamedTuple):
     maximum_speed: float
     minimum_speed: float
 
-    maximum_mass: int
-    minimum_mass: int
-    starting_mass: int
+    maximum_mass: float
+    minimum_mass: float
+    starting_mass: float
 
-    food_mass: int
+    food_mass: float
     maximum_food: int
     maximum_viruses: int
 
-    mass_radius_consant: int
+    base_radius: float
+    mass_radius_consant: float
 
 class ServerConfig(NamedTuple):
     port: int
@@ -43,6 +44,7 @@ class Config(NamedTuple):
             game_dict["food_mass"], 
             game_dict["maximum_food"], 
             game_dict["maximum_viruses"],
+            game_dict["base_radius"],
             game_dict["mass_radius_constant"]
         )
 

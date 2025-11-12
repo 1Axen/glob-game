@@ -3,6 +3,7 @@ from libs.ecs import World, Id, Query, tag, component
 import random
 import json
 import libs.vector as vector
+from libs.vector_map import VectorMap
 from libs.config import Config
 from time import time
 from asyncio import sleep
@@ -11,8 +12,13 @@ from typing import Dict, List
 Vector = vector.Vector
 SocketServer = socketio.AsyncServer
 
+# singletons
+GameConfig = component()
+FoodVectorMap = component()
+
 # types
 Food = tag()
+Player = tag()
 Session = component()
 
 # metadata
@@ -36,7 +42,7 @@ def clamp(x: float, min: float, max: float) -> float:
     return x
 
 def mass_to_radius(config: Config, mass: float) -> float:
-    return mass * config.game.mass_radius_consant
+    return config.game.base_radius + mass * config.game.mass_radius_consant
 
 def speed_from_mass(config: Config, mass: float) -> float:
     game_config = config.game
@@ -46,15 +52,52 @@ def speed_from_mass(config: Config, mass: float) -> float:
         game_config.maximum_speed, game_config.minimum_speed
     )
 
-def create_glob(world: World, mass: int, position: Vector) -> Id:
+def circle_overlaps(position: Vector, radius: float, other_position: Vector, other_radius: float) -> bool:
+    vector_to_other = (other_position - position)
+    distance_to_other = vector.magnitude(vector_to_other)
+    return (distance_to_other < (radius - other_radius))
+
+def create_glob(world: World, mass: float, position: Vector) -> Id:
     glob = world.entity()
     world.set(glob, Mass, mass)
     world.set(glob, Position, position)
     return glob
 
-def move_globs(world: World, config: Config, delta_time: float):
+def eat_food(world: World, delta_time: float):
+    config: Config | None = world.get(GameConfig, GameConfig)
+    vector_map: VectorMap | None = world.get(FoodVectorMap, FoodVectorMap)
+
+    assert config != None
+    assert vector_map != None
+
+    for entity, mass, position, _ in Query(world, Mass, Position, Player):
+        radius = mass_to_radius(config, mass)
+        food_globs = vector_map.query_radius(position, radius)
+
+        for food_entity in food_globs:
+            food_mass: float | None = world.get(food_entity, Mass)
+            food_position: Vector | None = world.get(food_entity, Position)
+
+            assert food_mass != None
+            assert food_position != None
+
+            food_radius = mass_to_radius(config, food_mass)
+            if not circle_overlaps(position, radius, food_position, food_radius):
+                continue
+
+            print(f"e{entity} is eating e{food_entity}, + {food_mass} mass")
+            mass += food_mass
+            world.set(entity, Mass, mass)
+            world.delete(food_entity)
+            vector_map.remove(food_entity, food_position)
+
+def move_globs(world: World, delta_time: float):
+    config: Config | None = world.get(GameConfig, GameConfig)
+    assert config != None
+
     half_width = config.game.width / 2
     half_height = config.game.height / 2
+
     for entity, mass, position, move_direction in Query(world, Mass, Position, MoveDirection):
         speed = speed_from_mass(config, mass)
         velocity = Vector(move_direction.x * speed * delta_time, move_direction.y * speed * delta_time)
@@ -98,6 +141,10 @@ class GameInstance():
         self.socket = socket
         self._entity_map = {}
 
+        vector_map = VectorMap()
+        world.set(GameConfig, GameConfig, config)
+        world.set(FoodVectorMap, FoodVectorMap, vector_map)
+
         half_width = config.game.width // 2
         half_height = config.game.height // 2
         food_mass = config.game.food_mass
@@ -108,6 +155,7 @@ class GameInstance():
             )
             entity = create_glob(world, food_mass, position)
             world.add(entity, Food)
+            vector_map.insert(entity, position)
 
         pass
 
@@ -144,6 +192,7 @@ class GameInstance():
 
         glob = create_glob(world, self.config.game.starting_mass, Vector())
         world.add(glob, entity)
+        world.add(glob, Player)
         world.set(glob, Parent, entity)
         world.set(glob, Velocity, Vector())
         world.set(glob, MoveDirection, Vector())
@@ -179,7 +228,8 @@ class GameInstance():
             server_time += delta_time
             last_time = curr_time
 
-            move_globs(world, config, delta_time)
+            move_globs(world, delta_time)
+            eat_food(world, delta_time)
             world_state = serialize_world(world, server_time)
             await socket.emit("snapshot", world_state)
 

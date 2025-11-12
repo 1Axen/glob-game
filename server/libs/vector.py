@@ -5,6 +5,8 @@ class Vector():
     x: float
     y: float
 
+    __name__ = "vector"
+
     def __init__(self, x: float = 0, y: float = 0) -> None:
         self.x = x
         self.y = y
@@ -37,7 +39,9 @@ class Vector():
     
     def __str__(self) -> str:
         return f"<{self.x}, {self.y}>"
-        
+    
+    def __hash__(self) -> int:
+        return hash((self.x, self.y))
 
 EPSILON = 1E-5
     
