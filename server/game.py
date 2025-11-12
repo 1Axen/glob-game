@@ -60,7 +60,7 @@ def speed_from_mass(config: Config, mass: float) -> float:
         game_config.maximum_speed, game_config.minimum_speed
     )
 
-def circle_overlaps(position: Vector, radius: float, other_position: Vector, other_radius: float) -> bool:
+def can_eat_glob(position: Vector, radius: float, other_position: Vector, other_radius: float) -> bool:
     vector_to_other = (other_position - position)
     distance_to_other = vector.magnitude(vector_to_other)
     return (distance_to_other < (radius - other_radius))
@@ -113,7 +113,7 @@ def eat_food(world: World, delta_time: float):
             assert food_position != None
 
             food_radius = mass_to_radius(config, food_mass)
-            if not circle_overlaps(position, radius, food_position, food_radius):
+            if not can_eat_glob(position, radius, food_position, food_radius):
                 continue
 
             print(f"e{entity} is eating e{food_entity}, + {food_mass} mass")
@@ -155,7 +155,7 @@ def update_positions(world: World, delta_time: float):
             clamp(position.y + velocity.y * delta_time, -half_height, half_height)
         )
 
-        if (position != new_position and world.has(entity, Food)):
+        if (world.has(entity, Food)):
             vector_map.remove(entity, position)
             vector_map.insert(entity, new_position)
         
