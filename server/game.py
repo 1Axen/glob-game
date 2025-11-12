@@ -63,6 +63,20 @@ def create_glob(world: World, mass: float, position: Vector) -> Id:
     world.set(glob, Position, position)
     return glob
 
+def spawn_food(world: World, config: Config, vector_map: VectorMap) -> Id:
+    half_width = config.game.width // 2
+    half_height = config.game.height // 2
+    position = Vector(
+        random.randint(-half_width, half_width), 
+        random.randint(-half_height, half_height)
+    )
+
+    entity = create_glob(world, config.game.food_mass, position)
+    world.add(entity, Food)
+    vector_map.insert(entity, position)
+
+    return entity
+
 def eat_food(world: World, delta_time: float):
     config: Config | None = world.get(GameConfig, GameConfig)
     vector_map: VectorMap | None = world.get(FoodVectorMap, FoodVectorMap)
@@ -90,6 +104,8 @@ def eat_food(world: World, delta_time: float):
             world.set(entity, Mass, mass)
             world.delete(food_entity)
             vector_map.remove(food_entity, food_position)
+
+            spawn_food(world, config, vector_map)
 
 def move_globs(world: World, delta_time: float):
     config: Config | None = world.get(GameConfig, GameConfig)
@@ -151,18 +167,9 @@ class GameInstance():
         vector_map = VectorMap()
         world.set(GameConfig, GameConfig, config)
         world.set(FoodVectorMap, FoodVectorMap, vector_map)
-
-        half_width = config.game.width // 2
-        half_height = config.game.height // 2
-        food_mass = config.game.food_mass
+        
         for _ in range(1, config.game.maximum_food):
-            position = Vector(
-                random.randint(-half_width, half_width), 
-                random.randint(-half_height, half_height)
-            )
-            entity = create_glob(world, food_mass, position)
-            world.add(entity, Food)
-            vector_map.insert(entity, position)
+            spawn_food(world, config, vector_map)
 
         pass
 
