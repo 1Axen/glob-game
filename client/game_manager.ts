@@ -205,9 +205,9 @@ export default class GameManager {
     }
 
     private try_split(delta_time: number) {
-        const debounce = this.shoot_debounce
+        const debounce = this.split_debounce
         if (debounce > 0) {
-            this.shoot_debounce = Math.max(0, debounce - delta_time)
+            this.split_debounce = Math.max(0, debounce - delta_time)
             return
         }
 
