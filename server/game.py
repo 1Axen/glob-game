@@ -116,7 +116,6 @@ def eat_food(world: World, delta_time: float):
             if not can_eat_glob(position, radius, food_position, food_radius):
                 continue
 
-            print(f"e{entity} is eating e{food_entity}, + {food_mass} mass")
             mass += food_mass
             world.set(entity, Mass, mass)
             world.delete(food_entity)
