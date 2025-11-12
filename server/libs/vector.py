@@ -76,4 +76,4 @@ def accelerate(velocity: Vector, direction: Vector, max_speed: float, accelerati
     if acceleration_magnitude < EPSILON:
         return target_velocity
     
-    return velocity + ((velocity_change / change_magnitude) * acceleration_magnitude)
+    return velocity + (normalize(velocity_change) * acceleration_magnitude)

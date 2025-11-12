@@ -10,6 +10,8 @@
 
         "maximum_speed": 128,
         "minimum_speed": 16,
+        "friction": 16,
+        "acceleration": 8,
 
         "maximum_mass": 512,
         "minimum_mass": 4,

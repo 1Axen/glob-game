@@ -98,13 +98,20 @@ def move_globs(world: World, delta_time: float):
     half_width = config.game.width / 2
     half_height = config.game.height / 2
 
-    for entity, mass, position, move_direction in Query(world, Mass, Position, MoveDirection):
+    for entity, mass, position, velocity, move_direction in Query(world, Mass, Position, Velocity, MoveDirection):
         speed = speed_from_mass(config, mass)
-        velocity = Vector(move_direction.x * speed * delta_time, move_direction.y * speed * delta_time)
+
+        if (vector.magnitude(velocity) <= speed):
+            velocity = vector.accelerate(velocity, move_direction, speed, config.game.acceleration, delta_time)
+        else:
+            velocity = vector.friction(velocity, config.game.friction, delta_time)
+
         position = Vector(
-            clamp(position.x + velocity.x, -half_width, half_width), 
-            clamp(position.y + velocity.y, -half_height, half_height)
+            clamp(position.x + velocity.x * delta_time, -half_width, half_width), 
+            clamp(position.y + velocity.y * delta_time, -half_height, half_height)
         )
+
+        world.set(entity, Velocity, velocity)
         world.set(entity, Position, position)
 
 def serialize_world(world: World, server_time: float) -> str:

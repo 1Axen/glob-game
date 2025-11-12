@@ -7,6 +7,8 @@ class GameConfig(NamedTuple):
 
     maximum_speed: float
     minimum_speed: float
+    friction: float
+    acceleration: float
 
     maximum_mass: float
     minimum_mass: float
@@ -38,6 +40,8 @@ class Config(NamedTuple):
             game_dict["height"], 
             game_dict["maximum_speed"], 
             game_dict["minimum_speed"], 
+            game_dict["friction"], 
+            game_dict["acceleration"], 
             game_dict["maximum_mass"], 
             game_dict["minimum_mass"], 
             game_dict["starting_mass"], 
