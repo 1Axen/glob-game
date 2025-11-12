@@ -31,6 +31,9 @@ class VectorMap:
         if (cell == None):
             return
         
+        if (not id in cell):
+            return
+
         cell.remove(id)
 
     def query_radius(self, position: Vector, radius: float) -> List[Id]:
