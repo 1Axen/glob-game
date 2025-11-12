@@ -16,6 +16,8 @@ function mass_to_radius(mass: number): number {
 }
 
 const BASE_RADIUS = mass_to_radius(1)
+const STARTING_RADIUS = mass_to_radius(game.starting_mass)
+const MASS_LERP_SPEED = 16
 
 function create_container(viewport: Viewport): Container {
     const {worldWidth: world_width, worldHeight: world_height} = viewport
@@ -50,6 +52,7 @@ function create_grid_texture(size: number, thickness: number, color: string) {
 }
 
 export default class GameScene {
+    private zoom: number = 1
     private world: World
     private viewport: Viewport
     private container: Container
@@ -112,7 +115,7 @@ export default class GameScene {
         const viewport = this.viewport
         const {worldWidth: world_width, worldHeight: world_height} = viewport
 
-        const mass_fraction = Math.min(1, 16 * delta_time)
+        const mass_fraction = Math.min(1, MASS_LERP_SPEED * delta_time)
         for (const [_, mass, position, shape] of world.query(Mass, Position, Shape)) {
             const curr_radius = shape.width / 2
             const target_radius = mass_to_radius(mass)
@@ -128,7 +131,7 @@ export default class GameScene {
         }
     }
 
-    update_camera() {
+    update_camera(delta_time: number) {
         const world = this.world
         const viewport = this.viewport
 
@@ -152,9 +155,16 @@ export default class GameScene {
             return
         }
 
-        const zoom = 1
+        const width = (max_x - min_x)
+        const height = (max_y - min_y)
+        const radius = Math.max(width / 2, height / 2)
 
-        viewport.setZoom(zoom)
+        const curr_zoom = this.zoom
+        const target_zoom = Math.min(1, (STARTING_RADIUS / radius) ^ 4)
+        const fraction = (MASS_LERP_SPEED * delta_time)
+
+        this.zoom = lerp(curr_zoom, target_zoom, fraction)
+        viewport.setZoom(this.zoom)
         viewport.moveCenter((max_x + min_x) / 2, (max_y + min_y) / 2)
     }
 }

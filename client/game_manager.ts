@@ -211,6 +211,6 @@ export default class GameManager {
         this.replicate_move_direction()
 
         scene.update_globs(delta_time)
-        scene.update_camera()
+        scene.update_camera(delta_time)
     }
 }
