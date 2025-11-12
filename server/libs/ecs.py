@@ -259,7 +259,10 @@ class World():
                 
         column = archetype.columns_map[component]
         if (not is_tag_column(column)):
-            column.insert(record.row, value)
+            if len(column) > record.row:
+                column[record.row] = value
+            else:
+                column.insert(record.row, value)
 
     def remove(self, entity: Id, component: Id):
         record = self.entity_index.sparse[entity]
