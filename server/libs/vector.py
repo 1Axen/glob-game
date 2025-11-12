@@ -38,7 +38,7 @@ class Vector():
         return self.__class__(float(self.x // scalar), float(self.y // scalar))
     
     def __str__(self) -> str:
-        return f"<{self.x}, {self.y}>"
+        return f"<{self.x:.2f}, {self.y:.2f}>"
     
     def __hash__(self) -> int:
         return hash((self.x, self.y))
