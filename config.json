@@ -19,6 +19,7 @@
         "maximum_food": 1024,
         "maximum_viruses": 48,
 
-        "mass_radius_constant": 24
+        "base_radius": 4,
+        "mass_radius_constant": 6
     }
 }

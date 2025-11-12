@@ -5,13 +5,17 @@ import { LocalPlayer, Mass, Position, Shape } from "./components"
 import { game } from "../config.json"
 
 const EPSILON = 1E-2
-const FONT_SIZE = 14
-const BASE_MASS = game.minimum_mass
-const BASE_RADIUS = game.mass_radius_constant
+const FONT_SIZE = 6
 
 function lerp(a: number, b: number, t: number): number {
     return a + (b - a) * t
 }
+
+function mass_to_radius(mass: number): number {
+    return game.base_radius + (mass * game.mass_radius_constant)
+}
+
+const BASE_RADIUS = mass_to_radius(1)
 
 function create_container(viewport: Viewport): Container {
     const {worldWidth: world_width, worldHeight: world_height} = viewport
@@ -92,7 +96,7 @@ export default class GameScene {
                 text: name,
                 style: {
                     fill: "#ffffff",
-                    stroke: "#000000",
+                    stroke: {color: "#000000", width: 1},
                     fontSize: FONT_SIZE,
                 },
                 anchor: 0.5,
@@ -110,14 +114,15 @@ export default class GameScene {
 
         const mass_fraction = Math.min(1, 16 * delta_time)
         for (const [_, mass, position, shape] of world.query(Mass, Position, Shape)) {
-            const curr_scale = shape.scale.x
-            const target_scale = (mass / BASE_MASS)
-            var new_scale = lerp(curr_scale, target_scale, mass_fraction)
-            if (Math.abs(target_scale - new_scale) < EPSILON) {
-                new_scale = target_scale
+            const curr_radius = shape.width / 2
+            const target_radius = mass_to_radius(mass)
+            var new_radius = lerp(curr_radius, target_radius, mass_fraction)
+            if (Math.abs(target_radius - new_radius) < EPSILON) {
+                new_radius = target_radius
             }
 
-            shape.scale.set(new_scale)
+            shape.width = new_radius * 2
+            shape.height = new_radius * 2
             shape.position.set(position.x + (world_width / 2), position.y + (world_height / 2))
             shape.zIndex = mass + 10
         }
@@ -147,6 +152,9 @@ export default class GameScene {
             return
         }
 
+        const zoom = 1
+
+        viewport.setZoom(zoom)
         viewport.moveCenter((max_x + min_x) / 2, (max_y + min_y) / 2)
     }
 }
