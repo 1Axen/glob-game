@@ -53,6 +53,7 @@ export default class GameManager {
     private input: InputManager
     private socket: Socket
     private snapshots: Snapshot[]
+    private shoot_debounce = 0
 
     constructor(viewport: Viewport, socket: Socket) {
         const world = new World()
@@ -181,7 +182,7 @@ export default class GameManager {
         const after_positions = after.positions
         const before_positions = before.positions
 
-        for (const [entity] of world.query(Player).with(Position)) {
+        for (const [entity] of world.query(Position)) {
             const after_position = after_positions.get(entity)
             const before_position = before_positions.get(entity)
             if (after_position == undefined || before_position == undefined) {
@@ -202,6 +203,22 @@ export default class GameManager {
         this.socket.emit("move", move_direction)
     }
 
+
+    private try_shoot(delta_time: number) {
+        const shoot_debounce = this.shoot_debounce
+        if (shoot_debounce > 0) {
+            this.shoot_debounce = Math.max(0, shoot_debounce - delta_time)
+            return
+        }
+
+        if (!this.input.should_shoot()) {
+            return
+        }
+
+        this.shoot_debounce = 0.1
+        this.socket.emit("shoot", this.input.move_direction())
+    }
+
     update(ticker: Ticker) {
         const scene = this.scene
         const delta_time = ticker.deltaMS / 1000
@@ -209,6 +226,7 @@ export default class GameManager {
         this.clock.advance(delta_time)
         this.interpolate_positions()
         this.replicate_move_direction()
+        this.try_shoot(delta_time)
 
         scene.update_globs(delta_time)
         scene.update_camera(delta_time)

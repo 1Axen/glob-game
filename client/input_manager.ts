@@ -19,7 +19,9 @@ export default class InputManager {
     private world: World
     private sprite: Sprite
     private viewport: Viewport
-    private pointer_location: Point
+
+    private pointer_held: boolean = false
+    private pointer_location: Point = new Point()
 
     constructor(world: World, viewport: Viewport) {
         const sprite = new Sprite({
@@ -32,6 +34,14 @@ export default class InputManager {
             zIndex: 999
         })
 
+        sprite.on("pointerdown", () => {
+            this.pointer_held = true
+        })
+
+        sprite.on("pointerup", () => {
+            this.pointer_held = false
+        })
+
         sprite.on("pointermove", (event) => {
             this.pointer_location = new Point(event.x, event.y)
         })
@@ -41,7 +51,10 @@ export default class InputManager {
         this.world = world
         this.sprite = sprite
         this.viewport = viewport
-        this.pointer_location = new Point()
+    }
+
+    should_shoot(): boolean {
+        return this.pointer_held
     }
 
     move_direction(): [number, number] {

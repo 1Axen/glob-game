@@ -123,17 +123,25 @@ def update_velocity(world: World, delta_time: float):
 
 def update_positions(world: World, delta_time: float):
     config: Config | None = world.get(GameConfig, GameConfig)
+    vector_map: VectorMap | None = world.get(FoodVectorMap, FoodVectorMap)
+
     assert config != None
+    assert vector_map != None
 
     half_width = config.game.width / 2
     half_height = config.game.height / 2
 
     for entity, position, velocity in Query(world, Position, Velocity):
-        position = Vector(
+        new_position = Vector(
             clamp(position.x + velocity.x * delta_time, -half_width, half_width), 
             clamp(position.y + velocity.y * delta_time, -half_height, half_height)
         )
-        world.set(entity, Position, position)
+
+        if (position != new_position and world.has(entity, Food)):
+            vector_map.remove(entity, position)
+            vector_map.insert(entity, new_position)
+        
+        world.set(entity, Position, new_position)
 
 def serialize_world(world: World, server_time: float) -> str:
     globs = []
@@ -161,15 +169,18 @@ class GameInstance():
     world: World
     config: Config
     socket: SocketServer
+    vector_map: VectorMap
     _entity_map: Dict[str, Id]
 
     def __init__(self, socket: SocketServer, world: World, config: Config) -> None:
+        vector_map = VectorMap()
+
         self.world = world
         self.config = config
         self.socket = socket
+        self.vector_map = vector_map
         self._entity_map = {}
-
-        vector_map = VectorMap()
+        
         world.set(GameConfig, GameConfig, config)
         world.set(FoodVectorMap, FoodVectorMap, vector_map)
         
@@ -231,6 +242,39 @@ class GameInstance():
 
         for glob_entity, _ in Query(world, entity):
             world.set(glob_entity, MoveDirection, move_direction)
+
+    def shoot(self, sid: str, direction: tuple[float, float]):
+        entity = self._entity_map.get(sid, None)
+        if entity == None:
+            raise Exception
+        
+        world = self.world
+        config = self.config
+        vector_map = self.vector_map
+        shoot_direction = Vector(*direction)
+
+        if (vector.magnitude(shoot_direction) == 0):
+            shoot_direction = Vector(1, 0)
+        else:
+            shoot_direction = vector.normalize(shoot_direction)
+
+        food_mass = config.game.food_mass
+        food_diameter = mass_to_radius(config, config.game.food_mass) * 2 
+        minimum_mass = config.game.minimum_mass
+
+        for glob_entity, mass, position, _ in Query(world, Mass, Position, entity):
+            if (mass <= minimum_mass):
+                continue
+
+            radius = mass_to_radius(config, mass)
+            spawn_offset = (shoot_direction * (radius + food_diameter))
+            spawn_position = position + spawn_offset
+
+            food_entity = spawn_food(world, config, vector_map)
+
+            world.set(glob_entity, Mass, max(minimum_mass, mass - food_mass))
+            world.set(food_entity, Position, spawn_position)
+            world.set(food_entity, Velocity, shoot_direction * 512)
 
     async def init_game_loop(self):
         world = self.world

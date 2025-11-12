@@ -41,6 +41,10 @@ async def main():
     def move(sid, direction):
         game_instance.move(sid, direction)
 
+    @sio.event
+    def shoot(sid, direction):
+        game_instance.shoot(sid, direction)
+
     await game_instance.init_game_loop()
 
 if __name__ == "__main__":
