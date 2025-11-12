@@ -53,6 +53,8 @@ export default class GameManager {
     private input: InputManager
     private socket: Socket
     private snapshots: Snapshot[]
+
+    private split_debounce = 0
     private shoot_debounce = 0
 
     constructor(viewport: Viewport, socket: Socket) {
@@ -203,11 +205,25 @@ export default class GameManager {
         this.socket.emit("move", move_direction)
     }
 
+    private try_split(delta_time: number) {
+        const debounce = this.shoot_debounce
+        if (debounce > 0) {
+            this.shoot_debounce = Math.max(0, debounce - delta_time)
+            return
+        }
+
+        if (!this.input.should_split()) {
+            return
+        }
+
+        this.split_debounce = 0.1
+        this.socket.emit("split", this.input.move_direction())
+    }
 
     private try_shoot(delta_time: number) {
-        const shoot_debounce = this.shoot_debounce
-        if (shoot_debounce > 0) {
-            this.shoot_debounce = Math.max(0, shoot_debounce - delta_time)
+        const debounce = this.shoot_debounce
+        if (debounce > 0) {
+            this.shoot_debounce = Math.max(0, debounce - delta_time)
             return
         }
 
@@ -227,6 +243,7 @@ export default class GameManager {
         this.interpolate_positions()
         this.replicate_move_direction()
         this.try_shoot(delta_time)
+        this.try_split(delta_time)
 
         scene.update_globs(delta_time)
         scene.update_camera(delta_time)

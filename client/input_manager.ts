@@ -20,7 +20,8 @@ export default class InputManager {
     private sprite: Sprite
     private viewport: Viewport
 
-    private pointer_held: boolean = false
+    private split_held: boolean = false
+    private shoot_held: boolean = false
     private pointer_location: Point = new Point()
 
     constructor(world: World, viewport: Viewport) {
@@ -35,15 +36,27 @@ export default class InputManager {
         })
 
         sprite.on("pointerdown", () => {
-            this.pointer_held = true
+            this.shoot_held = true
         })
 
         sprite.on("pointerup", () => {
-            this.pointer_held = false
+            this.shoot_held = false
         })
 
         sprite.on("pointermove", (event) => {
             this.pointer_location = new Point(event.x, event.y)
+        })
+
+        window.addEventListener("keydown", (event) => {
+            if (event.key == " ") {
+                this.split_held = true
+            }
+        })
+
+        window.addEventListener("keyup", (event) => {
+            if (event.key == " ") {
+                this.split_held = true
+            }
         })
 
         viewport.addChild(sprite)
@@ -54,7 +67,11 @@ export default class InputManager {
     }
 
     should_shoot(): boolean {
-        return this.pointer_held
+        return this.shoot_held
+    }
+
+    should_split(): boolean {
+        return this.split_held
     }
 
     move_direction(): [number, number] {

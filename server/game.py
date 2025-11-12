@@ -77,6 +77,15 @@ def spawn_food(world: World, config: Config, vector_map: VectorMap) -> Id:
 
     return entity
 
+def spawn_player(world: World, parent: Id, mass: float, position: Vector) -> Id:
+    glob = create_glob(world, mass, position)
+    world.add(glob, Player)
+    world.add(glob, parent)
+    world.set(glob, Parent, parent)
+    world.set(glob, Velocity, Vector())
+    world.set(glob, MoveDirection, Vector())
+    return glob
+
 def eat_food(world: World, delta_time: float):
     config: Config | None = world.get(GameConfig, GameConfig)
     vector_map: VectorMap | None = world.get(FoodVectorMap, FoodVectorMap)
@@ -117,7 +126,8 @@ def update_velocity(world: World, delta_time: float):
         move_direction = world.get(entity, MoveDirection)
         if (move_direction != None):
             speed = speed_from_mass(config, mass)
-            velocity = vector.accelerate(velocity, move_direction, speed, config.game.acceleration, delta_time)
+            if (vector.magnitude(velocity) <= speed):
+                velocity = vector.accelerate(velocity, move_direction, speed, config.game.acceleration, delta_time)
 
         world.set(entity, Velocity, velocity)
 
@@ -220,12 +230,8 @@ class GameInstance():
         world = self.world
         world.set(entity, Name, name)
 
-        glob = create_glob(world, self.config.game.starting_mass, Vector())
-        world.add(glob, entity)
-        world.add(glob, Player)
-        world.set(glob, Parent, entity)
-        world.set(glob, Velocity, Vector())
-        world.set(glob, MoveDirection, Vector())
+        position = Vector()
+        spawn_player(world, entity, self.config.game.starting_mass, position)
 
         print(f"* created entity: {entity} ({name})")
 
@@ -275,6 +281,30 @@ class GameInstance():
             world.set(glob_entity, Mass, max(minimum_mass, mass - food_mass))
             world.set(food_entity, Position, spawn_position)
             world.set(food_entity, Velocity, shoot_direction * 512)
+
+    def split(self, sid: str, direction: tuple[float, float]):
+        entity = self._entity_map.get(sid, None)
+        if entity == None:
+            raise Exception
+        
+        world = self.world
+        config = self.config
+        split_direction = Vector(*direction)
+
+        if (vector.magnitude(split_direction) == 0):
+            split_direction = Vector(1, 0)
+        else:
+            split_direction = vector.normalize(split_direction)
+
+        minimum_mass = config.game.minimum_mass
+        for glob_entity, mass, position, _ in Query(world, Mass, Position, entity):
+            half_mass = (mass / 2)
+            if (half_mass < minimum_mass):
+                continue
+
+            new_glob_entity = spawn_player(world, entity, half_mass, position)
+            world.set(new_glob_entity, Velocity, split_direction * 512)
+            world.set(glob_entity, Mass, half_mass)
 
     async def init_game_loop(self):
         world = self.world
