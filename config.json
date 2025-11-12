@@ -2,7 +2,7 @@
     "server": {
         "hostname": "0.0.0.0",
         "port": 8080,
-        "update_rate": 20
+        "update_rate": 40
     },
     "game": {
         "width": 4096,
