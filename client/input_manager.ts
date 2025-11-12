@@ -45,7 +45,7 @@ export default class InputManager {
 
         window.addEventListener("keyup", (event) => {
             if (event.key == " ") {
-                this.split_held = true
+                this.split_held = false
             }
         })
     }
