@@ -64,7 +64,7 @@ export default class GameManager {
         this.socket = socket
         this.clock = new SyncedClock()
         this.scene = new GameScene(world, viewport)
-        this.input = new InputManager(world, viewport)
+        this.input = new InputManager(viewport)
         this.snapshots = []
 
         this.setup_snapshot_receive()

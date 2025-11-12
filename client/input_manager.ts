@@ -20,7 +20,7 @@ export default class InputManager {
     private split_held: boolean = false
     private shoot_held: boolean = false
 
-    constructor(world: World, viewport: Viewport) {
+    constructor(viewport: Viewport) {
         viewport.on("pointerdown", () => {
             this.shoot_held = true
         })
