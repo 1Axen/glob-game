@@ -107,27 +107,32 @@ def eat_food(world: World, delta_time: float):
 
             spawn_food(world, config, vector_map)
 
-def move_globs(world: World, delta_time: float):
+def update_velocity(world: World, delta_time: float):
+    config: Config | None = world.get(GameConfig, GameConfig)
+    assert config != None
+
+    for entity, mass, velocity in Query(world, Mass, Velocity):
+        velocity = vector.friction(velocity, config.game.friction, delta_time)
+
+        move_direction = world.get(entity, MoveDirection)
+        if (move_direction != None):
+            speed = speed_from_mass(config, mass)
+            velocity = vector.accelerate(velocity, move_direction, speed, config.game.acceleration, delta_time)
+
+        world.set(entity, Velocity, velocity)
+
+def update_positions(world: World, delta_time: float):
     config: Config | None = world.get(GameConfig, GameConfig)
     assert config != None
 
     half_width = config.game.width / 2
     half_height = config.game.height / 2
 
-    for entity, mass, position, velocity, move_direction in Query(world, Mass, Position, Velocity, MoveDirection):
-        speed = speed_from_mass(config, mass)
-
-        if (vector.magnitude(velocity) <= speed):
-            velocity = vector.accelerate(velocity, move_direction, speed, config.game.acceleration, delta_time)
-        else:
-            velocity = vector.friction(velocity, config.game.friction, delta_time)
-
+    for entity, position, velocity in Query(world, Position, Velocity):
         position = Vector(
             clamp(position.x + velocity.x * delta_time, -half_width, half_width), 
             clamp(position.y + velocity.y * delta_time, -half_height, half_height)
         )
-
-        world.set(entity, Velocity, velocity)
         world.set(entity, Position, position)
 
 def serialize_world(world: World, server_time: float) -> str:
@@ -242,7 +247,8 @@ class GameInstance():
             server_time += delta_time
             last_time = curr_time
 
-            move_globs(world, delta_time)
+            update_velocity(world, delta_time)
+            update_positions(world, delta_time)
             eat_food(world, delta_time)
             world_state = serialize_world(world, server_time)
             await socket.emit("snapshot", world_state)
