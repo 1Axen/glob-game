@@ -130,11 +130,11 @@ def update_velocity(world: World, delta_time: float):
     for entity, mass, velocity in Query(world, Mass, Velocity):
         velocity = vector.friction(velocity, config.game.friction, delta_time)
 
-        move_direction = world.get(entity, MoveDirection)
-        if (move_direction != None):
+        direction = world.get(entity, MoveDirection)
+        if (direction != None):
             speed = speed_from_mass(config, mass)
             if (vector.magnitude(velocity) <= speed):
-                velocity = vector.accelerate(velocity, move_direction, speed, config.game.acceleration, delta_time)
+                velocity = vector.accelerate(velocity, direction, speed, config.game.acceleration, delta_time)
 
         world.set(entity, Velocity, velocity)
 
