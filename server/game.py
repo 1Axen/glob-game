@@ -206,7 +206,7 @@ def update_positions(world: World, delta_time: float):
                     push_amount = (radius_summed - distance_to) + 0.1
                     push_vector = vector.normalize(vector_to) if distance_to != 0 else Vector(1, 0)
                     position -= (push_vector * push_amount)
-        elif (world.has(entity, Food)):
+        elif (world.has(entity, Food) and position != old_position):
             vector_map.remove(entity, old_position)
             vector_map.insert(entity, position)
                     
