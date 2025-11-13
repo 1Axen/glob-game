@@ -313,15 +313,21 @@ class World():
 
 class Query():
     world: World
+    filter_ids: Tuple[Id, ...]
     filter_with: Tuple[Id, ...]
 
     index: int = -1
     last_archetype: int = -1
     matched_archetypes: List[Archetype]
 
-    def __init__(self, world: World, *filter_with: Id):
+    def with_ids(self, *filter_with: Id):
+        self.filter_with += filter_with
+        return self
+
+    def __init__(self, world: World, *filter_ids: Id):
         self.world = world
-        self.filter_with = filter_with
+        self.filter_ids = filter_ids
+        self.filter_with = filter_ids
         self.matched_archetypes = []
 
     def __iter__(self):
@@ -362,6 +368,7 @@ class Query():
     
     def __next__(self):
         index = self.index
+        filter_ids = self.filter_ids
         last_archtype = self.last_archetype
         matched_archetypes = self.matched_archetypes
         
@@ -386,7 +393,7 @@ class Query():
         entity = archetype.entities[index]
         values = []
 
-        for component in self.filter_with:
+        for component in filter_ids:
             column = columns_map[component]
             value = None if is_tag_column(column) else column[index] 
             values.append(value)
