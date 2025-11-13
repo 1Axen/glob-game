@@ -54,8 +54,9 @@ export default class GameManager {
     private socket: Socket
     private snapshots: Snapshot[]
 
-    private split_debounce = 0
-    private shoot_debounce = 0
+    private split_debounce: number = 0
+    private shoot_debounce: number = 0
+    private last_target_point: [number, number] = [0, 0]
 
     constructor(viewport: Viewport, socket: Socket) {
         const world = new World()
@@ -200,8 +201,17 @@ export default class GameManager {
         }
     }
 
-    replicate_target_point() {
-        this.socket.emit("move", this.input.target_point())
+    private replicate_target_point() {
+        const target_point = this.input.target_point()
+        if (
+            this.last_target_point[0] === target_point[0] 
+            && this.last_target_point[1] == target_point[1] 
+        ) {
+            return
+        }
+
+        this.last_target_point = target_point
+        this.socket.emit("move", target_point)
     }
 
     private try_split(delta_time: number) {
