@@ -25,6 +25,9 @@ Session = component()
 Name = component()
 Parent = component()
 
+# gameplay
+MergeDebounce = component()
+
 # physics
 Mass = component()
 Position = component()
@@ -101,7 +104,7 @@ def eat_food(world: World, delta_time: float):
     assert config != None
     assert vector_map != None
 
-    for entity, mass, position, _ in Query(world, Mass, Position, Player):
+    for entity, mass, position in Query(world, Mass, Position).with_ids(Player):
         radius = mass_to_radius(config, mass)
         food_globs = vector_map.query_radius(position, radius)
 
@@ -117,11 +120,38 @@ def eat_food(world: World, delta_time: float):
                 continue
 
             mass += food_mass
-            world.set(entity, Mass, mass)
             world.delete(food_entity)
             vector_map.remove(food_entity, food_position)
 
             spawn_food(world, config, vector_map)
+            
+        world.set(entity, Mass, mass)
+
+def eat_players(world: World, delta_time: float):
+    config: Config | None = world.get(GameConfig, GameConfig)
+    assert config != None
+
+    for entity, mass, position, parent in Query(world, Mass, Position, Parent):
+        radius = mass_to_radius(config, mass)
+
+        for other_entity, other_mass, other_position in Query(world, Mass, Position).with_ids(Player):
+            if other_entity == entity:
+                continue
+
+            if other_mass >= mass:
+                continue
+
+            if world.has(other_entity, parent) and world.has(other_entity, MergeDebounce):
+                continue
+
+            other_radius = mass_to_radius(config, other_mass)
+            if not can_eat_glob(position, radius, other_position, other_radius):
+                continue
+
+            mass += other_mass
+            world.delete(other_entity)
+
+        world.set(entity, Mass, mass)
 
 def update_velocity(world: World, delta_time: float):
     config: Config | None = world.get(GameConfig, GameConfig)
@@ -148,17 +178,45 @@ def update_positions(world: World, delta_time: float):
     half_width = config.game.width / 2
     half_height = config.game.height / 2
 
-    for entity, position, velocity in Query(world, Position, Velocity):
-        new_position = Vector(
+    for entity, mass, position, velocity in Query(world, Mass, Position, Velocity):
+        old_position = position
+        position = Vector(
             clamp(position.x + velocity.x * delta_time, -half_width, half_width), 
             clamp(position.y + velocity.y * delta_time, -half_height, half_height)
         )
 
-        if (world.has(entity, Food)):
-            vector_map.remove(entity, position)
-            vector_map.insert(entity, new_position)
-        
-        world.set(entity, Position, new_position)
+        parent = world.get(entity, Parent)
+        if (parent != None):
+            radius = mass_to_radius(config, mass)
+
+            for sibling_entity, sibling_mass, sibling_position in Query(world, Mass, Position).with_ids(MergeDebounce, parent):
+                if (sibling_entity == entity):
+                    continue
+
+                sibling_radius = mass_to_radius(config, sibling_mass)
+                radius_summed = (radius + sibling_radius)
+
+                vector_to = (sibling_position - position)
+                distance_to = vector.magnitude(vector_to)
+
+                if (distance_to < radius_summed):
+                    push_amount = (radius_summed - distance_to) + 0.1
+                    push_vector = vector.normalize(vector_to) if distance_to != 0 else Vector(1, 0)
+                    position -= (push_vector * push_amount)
+        elif (world.has(entity, Food)):
+            vector_map.remove(entity, old_position)
+            vector_map.insert(entity, position)
+                    
+        world.set(entity, Position, position)
+
+def erode_merge_debounces(world: World, delta_time: float):
+    for entity, debounce in Query(world, MergeDebounce):
+        debounce -= delta_time
+        if (debounce <= 0):
+            world.remove(entity, MergeDebounce)
+            continue
+
+        world.set(entity, MergeDebounce, debounce)
 
 def serialize_world(world: World, server_time: float) -> str:
     globs = []
@@ -238,9 +296,9 @@ class GameInstance():
         world.set(entity, Name, name)
 
         position = Vector()
-        spawn_player(world, entity, self.config.game.starting_mass, position)
+        glob_entity = spawn_player(world, entity, self.config.game.starting_mass, position)
 
-        print(f"* created entity: {entity} ({name})")
+        print(f"* created entity: {glob_entity} ({name})")
 
     def move(self, sid: str, target_point: tuple[float, float]):
         entity = self._entity_map.get(sid, None)
@@ -250,9 +308,9 @@ class GameInstance():
         world = self.world
         target_position = point_to_vector(self.config, target_point)
 
-        for glob_entity, position, _ in Query(world, Position, entity):
+        for glob_entity, position in Query(world, Position).with_ids(entity):
             direction = (target_position - position)
-            if vector.magnitude(direction) > 1:
+            if vector.magnitude(direction) != 0:
                 direction = vector.normalize(direction)
 
             world.set(glob_entity, MoveDirection, direction)
@@ -271,7 +329,7 @@ class GameInstance():
         food_diameter = mass_to_radius(config, config.game.food_mass) * 2 
         minimum_mass = config.game.minimum_mass
 
-        for glob_entity, mass, position, _ in Query(world, Mass, Position, entity):
+        for glob_entity, mass, position in Query(world, Mass, Position).with_ids(entity):
             if (mass <= minimum_mass):
                 continue
 
@@ -301,7 +359,9 @@ class GameInstance():
         target_position = point_to_vector(self.config, target_point)
 
         minimum_mass = config.game.minimum_mass
-        for glob_entity, mass, position, _ in Query(world, Mass, Position, entity):
+        merge_debounce = config.game.merge_debounce
+
+        for original_entity, mass, position in Query(world, Mass, Position).with_ids(entity):
             half_mass = (mass / 2)
             if (half_mass < minimum_mass):
                 continue
@@ -312,9 +372,13 @@ class GameInstance():
             else:
                 direction = vector.normalize(direction)
 
-            new_glob_entity = spawn_player(world, entity, half_mass, position)
-            world.set(new_glob_entity, Velocity, direction * 512)
-            world.set(glob_entity, Mass, half_mass)
+            radius = mass_to_radius(config, half_mass)
+            position += direction * radius
+
+            split_entity = spawn_player(world, entity, half_mass, position)
+            world.set(split_entity, Velocity, direction * 512)
+            world.set(split_entity, MergeDebounce, merge_debounce)
+            world.set(original_entity, Mass, half_mass)
 
     async def init_game_loop(self):
         world = self.world
@@ -331,9 +395,11 @@ class GameInstance():
             server_time += delta_time
             last_time = curr_time
 
+            erode_merge_debounces(world, delta_time)
             update_velocity(world, delta_time)
             update_positions(world, delta_time)
             eat_food(world, delta_time)
+            eat_players(world, delta_time)
             world_state = serialize_world(world, server_time)
             await socket.emit("snapshot", world_state)
 

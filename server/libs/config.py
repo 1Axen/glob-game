@@ -21,6 +21,8 @@ class GameConfig(NamedTuple):
     base_radius: float
     mass_radius_consant: float
 
+    merge_debounce: float
+
 class ServerConfig(NamedTuple):
     port: int
     hostname: str
@@ -49,7 +51,8 @@ class Config(NamedTuple):
             game_dict["maximum_food"], 
             game_dict["maximum_viruses"],
             game_dict["base_radius"],
-            game_dict["mass_radius_constant"]
+            game_dict["mass_radius_constant"],
+            game_dict["merge_debounce"]
         )
 
         server_dict: dict = contents["server"]

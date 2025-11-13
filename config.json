@@ -22,6 +22,8 @@
         "maximum_viruses": 48,
 
         "base_radius": 4,
-        "mass_radius_constant": 6
+        "mass_radius_constant": 6,
+
+        "merge_debounce": 30
     }
 }
