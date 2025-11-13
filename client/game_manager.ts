@@ -104,9 +104,9 @@ export default class GameManager {
                 const mass = glob[1]
                 const position = glob[2]
 
-                const player_data = players[glob[3]] || []
-                const name = player_data[0]
-                const session_id = player_data[1]
+                const player_data = players[glob[3]]
+                const name = player_data?.[0]
+                const session_id = player_data?.[1]
 
                 var entity = entities_map.get(id)
                 const point = new Point(position[0], position[1])
