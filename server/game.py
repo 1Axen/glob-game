@@ -109,6 +109,9 @@ def eat_food(world: World, delta_time: float):
         food_globs = vector_map.query_radius(position, radius)
 
         for food_entity in food_globs:
+            if (not world.contains(food_entity)):
+                continue
+
             food_mass: float | None = world.get(food_entity, Mass)
             food_position: Vector | None = world.get(food_entity, Position)
 
