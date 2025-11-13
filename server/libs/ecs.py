@@ -211,6 +211,9 @@ class World():
 
         return component_id
     
+    def contains(self, entity: Id) -> bool:
+        return entity in self.entity_index.sparse
+    
     def has(self, entity: Id, component: Id) -> bool:
         record = self.entity_index.sparse[entity]
         archetype = record.archetype
