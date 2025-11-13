@@ -2,7 +2,7 @@ import { Socket } from "socket.io-client";
 import { Id, World } from "./libs/ecs";
 import GameScene from "./game_scene";
 import { Color, Point, Ticker } from "pixi.js";
-import { LocalPlayer, Mass, Player, Position, Shape } from "./components";
+import { LocalPlayer, Mass, Name, Player, Position, Shape } from "./components";
 import { server } from "../config.json"
 import SyncedClock from "./libs/synced_clock";
 import { Viewport } from "pixi-viewport";
@@ -123,6 +123,7 @@ export default class GameManager {
 
                     if (player_data != undefined) {
                         world.add(entity, Player)
+                        world.set(entity, Name, name)
                     }
                     
                     if (session_id == socket.id) {
