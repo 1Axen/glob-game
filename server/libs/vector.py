@@ -11,6 +11,12 @@ class Vector():
         self.x = x
         self.y = y
 
+    def __eq__(self, value: object) -> bool:
+        if isinstance(value, Vector):
+            return self.x == value.x and self.y == value.y
+        
+        return False
+
     def __add__(self, vector_or_scalar):
         if isinstance(vector_or_scalar, (int, float)):
             scalar = vector_or_scalar
