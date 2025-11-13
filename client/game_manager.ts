@@ -60,6 +60,9 @@ export default class GameManager {
     private shoot_debounce: number = 0
     private last_target_point: [number, number] = [0, 0]
 
+    on_death: () => void
+    private was_alive: boolean = false
+
     constructor(viewport: Viewport, socket: Socket, leaderboard_div: HTMLDivElement) {
         const world = new World()
 
@@ -250,6 +253,19 @@ export default class GameManager {
         this.socket.emit("shoot", this.input.target_point())
     }
 
+    private check_for_death() {
+        var is_alive = false
+        for (const [_] of this.world.query(LocalPlayer)) {
+            is_alive = true
+        }
+
+        if (is_alive == false && this.was_alive == true) {
+            this.on_death()
+        }
+
+        this.was_alive = is_alive
+    }
+
     update(ticker: Ticker) {
         const scene = this.scene
         const delta_time = ticker.deltaMS / 1000
@@ -259,6 +275,7 @@ export default class GameManager {
         this.replicate_target_point()
         this.try_shoot(delta_time)
         this.try_split(delta_time)
+        this.check_for_death()
 
         scene.update_globs(delta_time)
         scene.update_camera(delta_time)

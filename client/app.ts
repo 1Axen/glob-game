@@ -85,15 +85,20 @@ window.onload = async function() {
 
     const game_manager = new GameManager(viewport, socket, leaderboard)
 
-    function disconnect() {
+    function on_death() {
+        start_menu.style.visibility = "visible"
+    }
+
+    function on_disconnect() {
         ticker.stop()
         socket.close()
         game_area.style.visibility = "hidden"
         start_menu.style.visibility = "visible"
     }
 
-    socket.on("disconnect", disconnect)
-    socket.on("connect_error", disconnect)
+    game_manager.on_death = on_death
+    socket.on("disconnect", on_disconnect)
+    socket.on("connect_error", on_disconnect)
     ticker.add((ticker) => {
         game_manager.update(ticker)
         renderer.render(viewport)
