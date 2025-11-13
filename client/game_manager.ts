@@ -7,6 +7,7 @@ import { server } from "../config.json"
 import SyncedClock from "./libs/synced_clock";
 import { Viewport } from "pixi-viewport";
 import InputManager from "./input_manager"
+import Leaderboard from "./leaderboard";
 
 type GlobData = [number, number, [number, number], number]
 type PlayerData = [string, string]
@@ -52,13 +53,14 @@ export default class GameManager {
     private scene: GameScene
     private input: InputManager
     private socket: Socket
+    private leaderboard: Leaderboard
     private snapshots: Snapshot[]
 
     private split_debounce: number = 0
     private shoot_debounce: number = 0
     private last_target_point: [number, number] = [0, 0]
 
-    constructor(viewport: Viewport, socket: Socket) {
+    constructor(viewport: Viewport, socket: Socket, leaderboard_div: HTMLDivElement) {
         const world = new World()
 
         this.world = world
@@ -66,6 +68,7 @@ export default class GameManager {
         this.clock = new SyncedClock()
         this.scene = new GameScene(world, viewport)
         this.input = new InputManager(viewport)
+        this.leaderboard = new Leaderboard(world,leaderboard_div)
         this.snapshots = []
 
         this.setup_snapshot_receive()
@@ -148,6 +151,8 @@ export default class GameManager {
                 world.delete(entity)
                 entities_map.delete(id)
             }
+
+            this.leaderboard.refresh()
         })
     }
 

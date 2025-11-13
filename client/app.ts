@@ -5,6 +5,7 @@ import { io } from "socket.io-client";
 import GameManager from "./game_manager";
 import _ from "./components";
 import { initDevtools } from '@pixi/devtools';
+import Leaderboard from "./leaderboard";
 
 const {width: world_width, height: world_height} = config.game
 
@@ -62,6 +63,7 @@ function setup_menu(on_start: (username: string) => void) {
 window.onload = async function() {
     const game_area = document.getElementById("gameArea") as HTMLElement
     const start_menu = document.getElementById("startMenuBackground") as HTMLElement
+    const leaderboard = document.getElementById("status") as HTMLDivElement
 
     const socket = await io()
     const ticker = new Ticker()
@@ -81,7 +83,7 @@ window.onload = async function() {
         renderer: renderer
     })
 
-    const game_manager = new GameManager(viewport, socket)
+    const game_manager = new GameManager(viewport, socket, leaderboard)
 
     function disconnect() {
         ticker.stop()
