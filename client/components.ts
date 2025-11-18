@@ -2,7 +2,7 @@ import { Container, Graphics, Point } from "pixi.js"
 import { component, tag } from "./libs/ecs"
 
 export const Food = tag()
-export const Player = tag()
+export const Player = component<string>()
 export const LocalPlayer = tag()
 
 export const Name = component<string>()

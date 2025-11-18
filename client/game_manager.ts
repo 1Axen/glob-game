@@ -128,8 +128,8 @@ export default class GameManager {
                     world.set(entity, Position, point)
 
                     if (player_data != undefined) {
-                        world.add(entity, Player)
                         world.set(entity, Name, name)
+                        world.set(entity, Player, session_id)
                     }
                     
                     if (session_id == socket.id) {

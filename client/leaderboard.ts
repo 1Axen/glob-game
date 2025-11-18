@@ -22,24 +22,25 @@ export default class Leaderboard {
     refresh() {
         const world = this.world
 
-        const score_map: Map<Id, number> = new Map()
-        for (const [entity, mass] of world.query(Mass).with(Player)) {
-            const score = score_map.get(entity) || 0
-            score_map.set(entity, score + mass)
+        const score_map: Map<string, Entry> = new Map()
+        for (const [entity, name, mass, session] of world.query(Name, Mass, Player)) {
+            var entry: Entry | undefined = score_map.get(session)
+            if (entry == undefined) {
+                entry = {
+                    name: name,
+                    score: mass,
+                    local_player: world.has(entity, LocalPlayer)
+                }
+                score_map.set(session, entry)
+                continue
+            }
+
+            entry.score += mass
         }
 
         const entries: Entry[] = []
-        for (const [entity, score] of score_map.entries()) {
-            var name = world.get(entity, Name)
-            if (name == undefined || name === "") {
-                name = DEFAULT_NAME
-            }
-
-            entries.push({
-                name,
-                score,
-                local_player: world.has(entity, LocalPlayer)
-            })
+        for (const entry of score_map.values()) {
+            entries.push(entry);
         }
 
         entries.sort((a, b) => {
