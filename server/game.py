@@ -35,6 +35,8 @@ Position = component(Vector)
 Velocity = component(Vector)
 MoveDirection = component(Vector)
 
+MOVE_SPEED_ACTUATION_RADIUS = 16
+
 def map(x: float, inmin: float, inmax: float, outmin: float, outmax: float) -> float:
     return outmin + (x - inmin) * (outmax - outmin) / (inmax - inmin)
 
@@ -322,12 +324,21 @@ class GameInstance():
             return
         
         world = self.world
+        config = self.game_config
         target_position = point_to_vector(self.game_config, target_point)
 
-        for entity, position in Query(world, Position).with_ids(parent):
+        for entity, mass, position in Query(world, Mass, Position).with_ids(parent):
+            radius = mass_to_radius(config, mass)
             direction = (target_position - position)
-            if vector.magnitude(direction) != 0:
-                direction = vector.normalize(direction)
+
+            distance = vector.magnitude(direction)
+            max_distance = (radius + MOVE_SPEED_ACTUATION_RADIUS)
+
+            if distance != 0:
+                if distance < max_distance:
+                    direction /= max_distance
+                else:
+                    direction /= distance
 
             world.set(entity, MoveDirection, direction)
 
