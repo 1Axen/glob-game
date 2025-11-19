@@ -40,6 +40,15 @@ class ComponentRecord():
         self.is_tag = is_tag
         self.archetypes = {}
 
+class AddComponentException(Exception):
+    pass
+
+class SetTagException(Exception):
+    pass
+
+class SetNoneException(Exception):
+    pass
+
 ComponentIndex = Dict[Id, ComponentRecord]
 
 TAG_COLUMN = []
@@ -236,10 +245,14 @@ class World():
     def add(self, entity: Id, component: Id):
         record = self.entity_index.sparse[entity]
         archetype = record.archetype
-
+        
         if (component in archetype.columns_map):
             return
-        
+
+        id_record = self.component_index.get(component)
+        if (id_record != None and not id_record.is_tag):
+            raise AddComponentException("Cannot add a component, use set instead")
+
         types = archetype.types.copy()
         insert_at = find_insert(types, component)
         types.insert(insert_at, component)
@@ -251,6 +264,9 @@ class World():
         record = self.entity_index.sparse[entity]
         archetype = record.archetype
 
+        if (value == None):
+            raise SetNoneException("Cannot set value to None, use remove instead")
+
         if not (component in archetype.columns_map):
             types = archetype.types.copy()
             insert_at = find_insert(types, component)
@@ -259,13 +275,16 @@ class World():
             to_archetype = self.__archetype_ensure(types)
             self.__entity_move(entity, record, to_archetype)
             archetype = to_archetype
-                
+        
+        id_record = self.component_index[component]
+        if (id_record.is_tag):
+            raise SetTagException("Cannot set a tag, use add instead")
+
         column = archetype.columns_map[component]
-        if (not is_tag_column(column)):
-            if len(column) > record.row:
-                column[record.row] = value
-            else:
-                column.insert(record.row, value)
+        if len(column) > record.row:
+            column[record.row] = value
+        else:
+            column.insert(record.row, value)
 
     def remove(self, entity: Id, component: Id):
         record = self.entity_index.sparse[entity]
