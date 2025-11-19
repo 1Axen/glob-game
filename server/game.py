@@ -7,32 +7,32 @@ from libs.vector_map import VectorMap
 from libs.config import Config
 from time import time
 from asyncio import sleep
-from typing import Dict, List
+from typing import Dict
 
 Vector = vector.Vector
 SocketServer = socketio.AsyncServer
 
 # singletons
-GameConfig = component()
-FoodVectorMap = component()
+GameConfig = component(Config)
+FoodVectorMap = component(VectorMap)
 
 # types
 Food = tag()
 Player = tag()
-Session = component()
+Session = component(str)
 
 # metadata
-Name = component()
-Parent = component()
+Name = component(str)
+Parent = component(Id[None])
 
 # gameplay
-MergeDebounce = component()
+MergeDebounce = component(float)
 
 # physics
-Mass = component()
-Position = component()
-Velocity = component()
-MoveDirection = component()
+Mass = component(float)
+Position = component(Vector)
+Velocity = component(Vector)
+MoveDirection = component(Vector)
 
 def map(x: float, inmin: float, inmax: float, outmin: float, outmax: float) -> float:
     return outmin + (x - inmin) * (outmax - outmin) / (inmax - inmin)
@@ -97,9 +97,9 @@ def spawn_player(world: World, parent: Id, mass: float, position: Vector) -> Id:
     world.set(glob, MoveDirection, Vector())
     return glob
 
-def eat_food(world: World, delta_time: float):
-    config: Config | None = world.get(GameConfig, GameConfig)
-    vector_map: VectorMap | None = world.get(FoodVectorMap, FoodVectorMap)
+def eat_food(world: World):
+    config = world.get(GameConfig, GameConfig)
+    vector_map = world.get(FoodVectorMap, FoodVectorMap)
 
     assert config != None
     assert vector_map != None
@@ -112,8 +112,8 @@ def eat_food(world: World, delta_time: float):
             if (not world.contains(food_entity)):
                 continue
 
-            food_mass: float | None = world.get(food_entity, Mass)
-            food_position: Vector | None = world.get(food_entity, Position)
+            food_mass = world.get(food_entity, Mass)
+            food_position = world.get(food_entity, Position)
 
             assert food_mass != None
             assert food_position != None
@@ -131,7 +131,7 @@ def eat_food(world: World, delta_time: float):
         world.set(entity, Mass, mass)
 
 def eat_players(world: World, delta_time: float):
-    config: Config | None = world.get(GameConfig, GameConfig)
+    config = world.get(GameConfig, GameConfig)
     assert config != None
 
     for entity, mass, position, parent in Query(world, Mass, Position, Parent):
@@ -157,7 +157,7 @@ def eat_players(world: World, delta_time: float):
         world.set(entity, Mass, mass)
 
 def update_velocity(world: World, delta_time: float):
-    config: Config | None = world.get(GameConfig, GameConfig)
+    config = world.get(GameConfig, GameConfig)
     assert config != None
 
     for entity, mass, velocity in Query(world, Mass, Velocity):
@@ -172,8 +172,8 @@ def update_velocity(world: World, delta_time: float):
         world.set(entity, Velocity, velocity)
 
 def update_positions(world: World, delta_time: float):
-    config: Config | None = world.get(GameConfig, GameConfig)
-    vector_map: VectorMap | None = world.get(FoodVectorMap, FoodVectorMap)
+    config = world.get(GameConfig, GameConfig)
+    vector_map = world.get(FoodVectorMap, FoodVectorMap)
 
     assert config != None
     assert vector_map != None
@@ -401,7 +401,7 @@ class GameInstance():
             erode_merge_debounces(world, delta_time)
             update_velocity(world, delta_time)
             update_positions(world, delta_time)
-            eat_food(world, delta_time)
+            eat_food(world)
             eat_players(world, delta_time)
             world_state = serialize_world(world, server_time)
             await socket.emit("snapshot", world_state)

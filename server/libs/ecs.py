@@ -1,7 +1,12 @@
 from dataclasses import dataclass
-from typing import List, Dict, NamedTuple, Tuple
+from typing import List, Dict, NamedTuple, Tuple, TypeVar, Generic, TypeVarTuple, Unpack
 
-Id = int
+Data = TypeVar("Data")
+DataTuple = TypeVarTuple("DataTuple")
+
+class Id(int, Generic[Data]):
+    pass
+
 ArchetypeId = int
 
 Type = str
@@ -56,8 +61,8 @@ MAX_COMPONENT_ID = 256
 ROOT_ARCHETYPE_ID = 0
 ROOT_ARCHETYPE_TYPE = ""
 
-EcsComponent = MAX_COMPONENT_ID + 1
-EcsRest = MAX_COMPONENT_ID + 2
+EcsComponent = Id(MAX_COMPONENT_ID + 1)
+EcsRest = Id(MAX_COMPONENT_ID + 2)
 
 max_prereg_tag = EcsRest
 max_prereg_component = 0
@@ -97,7 +102,7 @@ class World():
             self.entity()
 
         for index in range(0, max_prereg_component):
-            self.add(index, EcsComponent)
+            self.add(Id(index), EcsComponent)
 
         for _ in range(EcsRest, EcsRest + max_prereg_tag):
             self.entity()
@@ -200,11 +205,11 @@ class World():
         record.archetype = to
         record.row = to_row
 
-    def entity(self) -> Id:
+    def entity(self) -> Id[None]:
         entity_index = self.entity_index
         root_archetype = self.root_archetype
 
-        entity_id = entity_index.size
+        entity_id = Id(entity_index.size)
         entity_index.size += 1
 
         row = self.__archetype_append(entity_id, root_archetype)
@@ -212,10 +217,10 @@ class World():
 
         return entity_id
     
-    def component(self) -> Id:
+    def component(self, ttype: type[Data]) -> Id[Data]:
         component_index = self.component_index
 
-        component_id = len(component_index)
+        component_id = Id(len(component_index))
         self.add(component_id, EcsComponent)
 
         return component_id
@@ -236,23 +241,24 @@ class World():
 
         return True
 
-    def get(self, entity: Id, component: Id):
+    def get(self, entity: Id, component: Id[Data]) -> Data | None:
         record = self.entity_index.sparse.get(entity)
         if (record == None):
             return None
 
         archetype = record.archetype
         columns_map = archetype.columns_map
+
         if not (component in columns_map):
             return None
-        
+
         column = columns_map[component]
-        if (is_tag_column(column)):
+        if is_tag_column(column):
             return None
-        
+
         return column[record.row]
     
-    def add(self, entity: Id, component: Id):
+    def add(self, entity: Id, component: Id[None]):
         record = self.entity_index.sparse.get(entity)
         if (record == None):
             return
@@ -273,7 +279,7 @@ class World():
         to_archetype = self.__archetype_ensure(types)
         self.__entity_move(entity, record, to_archetype)
 
-    def set(self, entity: Id, component: Id, value):
+    def set(self, entity: Id, component: Id[Data], value: Data):
         if (value == None):
             raise SetNoneException("Cannot set value to None, use remove instead")
 
@@ -443,13 +449,13 @@ class Query():
 
         return entity, *values
 
-def tag() -> Id:
+def tag() -> Id[None]:
     global max_prereg_tag
     max_prereg_tag += 1
-    return max_prereg_tag
+    return Id(max_prereg_tag)
 
-def component() -> Id:
+def component(ttype: type[Data]) -> Id[Data]:
     global max_prereg_component
     component_id = max_prereg_component
     max_prereg_component += 1
-    return component_id
+    return Id(component_id)
