@@ -144,7 +144,7 @@ def eat_players(world: World, delta_time: float):
             if other_mass >= mass:
                 continue
 
-            if world.has(other_entity, parent) and world.has(other_entity, MergeDebounce):
+            if world.has(other_entity, parent, MergeDebounce):
                 continue
 
             other_radius = mass_to_radius(config, other_mass)

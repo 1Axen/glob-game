@@ -363,14 +363,22 @@ export class World {
         return component_id
     }
 
-    has(entity: Id, component: Id): boolean {
+    has<T extends Id[]>(entity: Id, ...components: [...T]): boolean {
         const record = this.entity_index.sparse.get(entity)
         if (record == undefined) {
             return false
         }
 
         const archetype = record.archetype
-        return archetype.columns_map.has(component)
+        const columns_map = archetype.columns_map
+
+        for (const component of components) {
+            if (!columns_map.has(component)) {
+                return false
+            }
+        }
+
+        return true
     }
 
     add(entity: Id, component: Id<undefined>) {

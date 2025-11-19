@@ -223,11 +223,18 @@ class World():
     def contains(self, entity: Id) -> bool:
         return entity in self.entity_index.sparse
     
+    def has(self, entity: Id, *components: Id) -> bool:
         record = self.entity_index.sparse.get(entity)
         if (record == None):
             return False
+        
         archetype = record.archetype
-        return component in archetype.columns_map
+
+        for component in components:
+            if not component in archetype.columns_map:
+                return False
+
+        return True
 
     def get(self, entity: Id, component: Id):
         record = self.entity_index.sparse.get(entity)
