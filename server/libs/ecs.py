@@ -362,31 +362,38 @@ class World():
 
 class Query():
     world: World
-    filter_ids: Tuple[Id, ...]
-    filter_with: Tuple[Id, ...]
+    terms: List[Id]
+    with_terms: List[Id]
+    without_terms: List[Id]
 
     index: int = -1
     last_archetype: int = -1
     matched_archetypes: List[Archetype]
 
-    def with_ids(self, *filter_with: Id):
-        self.filter_with += filter_with
+    def with_ids(self, *terms: Id):
+        self.with_terms += terms
+        return self
+    
+    def without(self, *terms: Id):
+        self.without_terms += terms
         return self
 
-    def __init__(self, world: World, *filter_ids: Id):
+    def __init__(self, world: World, *terms: Id):
         self.world = world
-        self.filter_ids = filter_ids
-        self.filter_with = filter_ids
+        self.terms = list(terms)
+        self.with_terms = list(terms)
+        self.without_terms = []
         self.matched_archetypes = []
 
     def __iter__(self):
         world = self.world
-        filter_with = self.filter_with
+        with_terms = self.with_terms
+        without_terms = self.without_terms
         archetypes = world.archetypes
         component_index = world.component_index
 
         smallest_record: ComponentRecord | None = None
-        for component in filter_with:
+        for component in with_terms:
             component_record = component_index.get(component, None)
             if component_record == None:
                 continue
@@ -403,8 +410,16 @@ class Query():
                 columns_map = archetype.columns_map
 
                 doesnt_match = False
-                for component in filter_with:
+                for component in with_terms:
                     if not component in columns_map:
+                        doesnt_match = True
+                        break
+
+                if doesnt_match:
+                    continue
+
+                for component in without_terms:
+                    if component in columns_map:
                         doesnt_match = True
                         break
                 
@@ -417,7 +432,7 @@ class Query():
     
     def __next__(self):
         index = self.index
-        filter_ids = self.filter_ids
+        terms = self.terms
         last_archtype = self.last_archetype
         matched_archetypes = self.matched_archetypes
         
@@ -442,7 +457,7 @@ class Query():
         entity = archetype.entities[index]
         values = []
 
-        for component in filter_ids:
+        for component in terms:
             column = columns_map[component]
             value = None if is_tag_column(column) else column[index] 
             values.append(value)

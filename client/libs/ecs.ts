@@ -66,23 +66,30 @@ function find_insert(types: Types, to_add: Id): number {
 }
 
 interface QueryIterator<T> {
-    with(...ids: Id[]): QueryIterator<T>,
+    with(...terms: Id[]): QueryIterator<T>,
+    without(...terms: Id[]): QueryIterator<T>,
     [Symbol.iterator](): Iterator<T>,
 }
 
-function create_query(world: World, ids: Id[]) {
-    var filter_with: Id[] = ids
+function create_query(world: World, terms: Id[]) {
+    const with_terms: Id[] = terms
+    const without_terms: Id[] = []
 
     return {
-        with(...with_ids: Id[]) {
-            filter_with = filter_with.concat(with_ids)
+        with(...terms: Id[]) {
+            with_terms.push(...terms)
+            return this
+        },
+
+        without(...terms: Id[]) {
+            without_terms.push(...terms)
             return this
         },
 
         [Symbol.iterator]() {
             const component_index = world.component_index
             var smallest_record: ComponentRecord | null = null
-            for (const component of filter_with) {
+            for (const component of with_terms) {
                 const record = component_index[component]
                 if (record == undefined) {
                     return { next() { 
@@ -103,8 +110,19 @@ function create_query(world: World, ids: Id[]) {
                     const columns_map = archetype.columns_map
 
                     var doesnt_match = false
-                    for (const component of filter_with) {
+                    for (const component of with_terms) {
                         if (!columns_map.has(component)) {
+                            doesnt_match = true
+                            break
+                        }
+                    }
+
+                    if (doesnt_match) {
+                        continue
+                    }
+
+                    for (const component of without_terms) {
+                        if (columns_map.has(component)) {
                             doesnt_match = true
                             break
                         }
@@ -155,7 +173,7 @@ function create_query(world: World, ids: Id[]) {
                     index -= 1
                     
                     const values: any[] = [entity]
-                    for (const component of ids) {
+                    for (const component of terms) {
                         const column = columns_map.get(component) as Column
                         const value = (column === TAG_COLUMN ? undefined : column[row])
                         values.push(value)
@@ -492,8 +510,8 @@ export class World {
         entity_index.sparse.delete(entity)
     }
 
-    query<T extends Id[]>(...ids: [...T]): QueryIterator<[Id, ...{[K in keyof T]: T[K] extends Id<infer U> ? U : never}]> {
-        return create_query(this, ids) as any
+    query<T extends Id[]>(...terms: [...T]): QueryIterator<[Id, ...{[K in keyof T]: T[K] extends Id<infer U> ? U : never}]> {
+        return create_query(this, terms) as any
     }
 }
 
