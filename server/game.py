@@ -286,51 +286,54 @@ class GameInstance():
         world = self.world
         entity_map = self._entity_map
 
-        entity = entity_map.get(sid)
-        if entity == None:
+        parent = entity_map.get(sid)
+        if parent == None:
             return
         
         entity_map.pop(sid)
         
-        for child, _ in Query(world, entity):
+        for child, _ in Query(world, parent):
             world.delete(child)
                 
-        world.delete(entity)
+        world.delete(parent)
 
-        print(f"* deleted entity: {entity}")    
+        print(f"* deleted entity: {parent}")    
 
     def respawn(self, sid: str, name: str):
-        entity = self._entity_map.get(sid, None)
-        if entity == None:
-            raise Exception
+        parent = self._entity_map.get(sid, None)
+        if parent == None:
+            print(f"{sid} tried spawning but they are already alive")
+            return
         
         world = self.world
-        world.set(entity, Name, name)
+        world.set(parent, Name, name)
 
         position = Vector()
-        glob_entity = spawn_player(world, entity, self.game_config.starting_mass, position)
+        child = spawn_player(world, parent, self.game_config.starting_mass, position)
 
-        print(f"* created entity: {glob_entity} ({name})")
+        print(f"* created entity: {child} ({name})")
 
     def move(self, sid: str, target_point: tuple[float, float]):
-        entity = self._entity_map.get(sid, None)
-        if entity == None:
-            raise Exception
+        parent = self._entity_map.get(sid, None)
+        if parent == None:
+            print(f"{sid} tried moving but they aren't alive")
+            return
         
         world = self.world
         target_position = point_to_vector(self.game_config, target_point)
 
-        for glob_entity, position in Query(world, Position).with_ids(entity):
+        for entity, position in Query(world, Position).with_ids(parent):
             direction = (target_position - position)
             if vector.magnitude(direction) != 0:
                 direction = vector.normalize(direction)
 
-            world.set(glob_entity, MoveDirection, direction)
+            world.set(entity, MoveDirection, direction)
 
     def shoot(self, sid: str, target_point: tuple[float, float]):
-        entity = self._entity_map.get(sid, None)
-        if entity == None:
-            raise Exception
+        parent = self._entity_map.get(sid, None)
+        if parent == None:
+            print(f"{sid} tried shooting but they aren't alive")
+            return
         
         world = self.world
         game_config = self.game_config
@@ -341,7 +344,7 @@ class GameInstance():
         food_diameter = mass_to_radius(game_config, game_config.food_mass) * 2 
         minimum_mass = game_config.minimum_mass
 
-        for glob_entity, mass, position in Query(world, Mass, Position).with_ids(entity):
+        for entity, mass, position in Query(world, Mass, Position).with_ids(parent):
             if (mass <= minimum_mass):
                 continue
 
@@ -357,14 +360,15 @@ class GameInstance():
 
             food_entity = spawn_food(world, game_config, food_vector_map)
 
-            world.set(glob_entity, Mass, max(minimum_mass, mass - food_mass))
+            world.set(entity, Mass, max(minimum_mass, mass - food_mass))
             world.set(food_entity, Position, spawn_position)
             world.set(food_entity, Velocity, direction * 512)
 
     def split(self, sid: str, target_point: tuple[float, float]):
-        entity = self._entity_map.get(sid, None)
-        if entity == None:
-            raise Exception
+        parent = self._entity_map.get(sid, None)
+        if parent == None:
+            print(f"{sid} tried splitting but they aren't alive")
+            return
         
         world = self.world
         game_config = self.game_config
@@ -373,7 +377,7 @@ class GameInstance():
         minimum_mass = game_config.minimum_mass
         merge_debounce = game_config.merge_debounce
 
-        for original_entity, mass, position in Query(world, Mass, Position).with_ids(entity):
+        for entity, mass, position in Query(world, Mass, Position).with_ids(parent):
             half_mass = (mass / 2)
             if (half_mass < minimum_mass):
                 continue
@@ -387,10 +391,10 @@ class GameInstance():
             radius = mass_to_radius(game_config, half_mass)
             position += direction * radius
 
-            split_entity = spawn_player(world, entity, half_mass, position)
+            split_entity = spawn_player(world, parent, half_mass, position)
             world.set(split_entity, Velocity, direction * 512)
             world.set(split_entity, MergeDebounce, merge_debounce)
-            world.set(original_entity, Mass, half_mass)
+            world.set(entity, Mass, half_mass)
 
     async def init_game_loop(self):
         world = self.world
