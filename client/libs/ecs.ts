@@ -365,12 +365,20 @@ export class World {
 
     has(entity: Id, component: Id): boolean {
         const record = this.entity_index.sparse.get(entity)
+        if (record == undefined) {
+            return false
+        }
+
         const archetype = record.archetype
         return archetype.columns_map.has(component)
     }
 
     add(entity: Id, component: Id<undefined>) {
         const record = this.entity_index.sparse.get(entity)
+        if (record == undefined) {
+            return
+        }
+
         const archetype = record.archetype
         if (archetype.columns_map.has(component)) return;
 
@@ -384,6 +392,10 @@ export class World {
 
     get<T>(entity: Id, component: Id<T>): T | undefined {
         const record = this.entity_index.sparse.get(entity)
+        if (record == undefined) {
+            return [] as any
+        }
+
         const archetype = record.archetype
 
         const columns_map = archetype.columns_map
@@ -395,6 +407,10 @@ export class World {
 
     set<T>(entity: Id, component: Id<T>, value: T) {
         const record = this.entity_index.sparse.get(entity)
+        if (record == undefined) {
+            return
+        }
+
         const archetype = record.archetype
 
         var column = archetype.columns_map.get(component)
@@ -413,6 +429,10 @@ export class World {
 
     remove(entity: Id, component: Id) {
         const record = this.entity_index.sparse.get(entity)
+        if (record == undefined) {
+            return
+        }
+
         const archetype = record.archetype
 
         const component_record = this.component_index[component]
@@ -427,6 +447,9 @@ export class World {
     delete(entity: Id) {
         const entity_index = this.entity_index
         const record = entity_index.sparse.get(entity)
+        if (record == undefined) {
+            return
+        }
 
         const row = record.row
         const archetype = record.archetype

@@ -223,15 +223,18 @@ class World():
     def contains(self, entity: Id) -> bool:
         return entity in self.entity_index.sparse
     
-    def has(self, entity: Id, component: Id) -> bool:
-        record = self.entity_index.sparse[entity]
+        record = self.entity_index.sparse.get(entity)
+        if (record == None):
+            return False
         archetype = record.archetype
         return component in archetype.columns_map
 
     def get(self, entity: Id, component: Id):
-        record = self.entity_index.sparse[entity]
-        archetype = record.archetype
+        record = self.entity_index.sparse.get(entity)
+        if (record == None):
+            return None
 
+        archetype = record.archetype
         columns_map = archetype.columns_map
         if not (component in columns_map):
             return None
@@ -243,7 +246,10 @@ class World():
         return column[record.row]
     
     def add(self, entity: Id, component: Id):
-        record = self.entity_index.sparse[entity]
+        record = self.entity_index.sparse.get(entity)
+        if (record == None):
+            return
+
         archetype = record.archetype
         
         if (component in archetype.columns_map):
@@ -261,11 +267,14 @@ class World():
         self.__entity_move(entity, record, to_archetype)
 
     def set(self, entity: Id, component: Id, value):
-        record = self.entity_index.sparse[entity]
-        archetype = record.archetype
-
         if (value == None):
             raise SetNoneException("Cannot set value to None, use remove instead")
+
+        record = self.entity_index.sparse.get(entity)
+        if (record == None):
+            return
+        
+        archetype = record.archetype
 
         if not (component in archetype.columns_map):
             types = archetype.types.copy()
@@ -287,7 +296,10 @@ class World():
             column.insert(record.row, value)
 
     def remove(self, entity: Id, component: Id):
-        record = self.entity_index.sparse[entity]
+        record = self.entity_index.sparse.get(entity)
+        if (record == None):
+            return
+
         archetype = record.archetype
 
         component_record = self.component_index[component]
@@ -303,7 +315,9 @@ class World():
 
     def delete(self, entity: Id):
         entity_index = self.entity_index
-        record = entity_index.sparse[entity]
+        record = self.entity_index.sparse.get(entity)
+        if (record == None):
+            return
 
         row = record.row
         archetype = record.archetype
