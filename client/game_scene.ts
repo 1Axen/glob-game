@@ -7,6 +7,16 @@ import { game } from "../config.json"
 const EPSILON = 1E-2
 const FONT_SIZE = 6
 
+const BASE_RADIUS = mass_to_radius(1)
+const STARTING_RADIUS = mass_to_radius(game.starting_mass)
+const MASS_LERP_SPEED = 16
+
+const VIRUS_COLOR = new Color("#00ff00")
+const VIRUS_SPIKES = 48
+const VIRUS_FILL_RADIUS = BASE_RADIUS - 0.5
+const VIRUS_INNER_RADIUS = BASE_RADIUS - 0.5
+const VIRUS_OUTER_RADIUS = BASE_RADIUS
+
 function lerp(a: number, b: number, t: number): number {
     return a + (b - a) * t
 }
@@ -49,10 +59,6 @@ function random_color(): Color {
         b: Math.random() * 255,
     })
 }
-
-const BASE_RADIUS = mass_to_radius(1)
-const STARTING_RADIUS = mass_to_radius(game.starting_mass)
-const MASS_LERP_SPEED = 16
 
 function create_container(viewport: Viewport): Container {
     const {worldWidth: world_width, worldHeight: world_height} = viewport
@@ -101,7 +107,7 @@ export default class GameScene {
         this.draw_grid()
     }
 
-    draw_grid() {
+    private draw_grid() {
         const viewport = this.viewport
         const texture = create_grid_texture(32, 1, "#6d6d6d")
         const sprite = new TilingSprite({
@@ -141,6 +147,36 @@ export default class GameScene {
         graphics
             .circle(BASE_RADIUS, BASE_RADIUS, BASE_RADIUS)
             .fill(random_color())
+
+        return container
+    }
+
+    virus_glob(): Container {
+        const [container, graphics] = this.glob()
+        const stroke_color = multiply_brightness(VIRUS_COLOR, 0.5)
+
+        graphics
+            .circle(VIRUS_OUTER_RADIUS, VIRUS_OUTER_RADIUS, VIRUS_FILL_RADIUS)
+            .fill(VIRUS_COLOR)
+            .beginPath()
+
+        for (let i = 0; i <= VIRUS_SPIKES; i++) {
+            const angle = (i / VIRUS_SPIKES) * (Math.PI * 2)
+            const radius = (i % 2 == 0) ? VIRUS_OUTER_RADIUS : VIRUS_INNER_RADIUS
+
+            const x = BASE_RADIUS + Math.cos(angle) * radius
+            const y = BASE_RADIUS + Math.sin(angle) * radius
+
+            if (i == 0) {
+                graphics.moveTo(x, y)
+            } else {
+                graphics.lineTo(x, y)
+            }
+        }
+
+        graphics
+            .closePath()
+            .stroke({width: 1.5, color: stroke_color});
 
         return container
     }

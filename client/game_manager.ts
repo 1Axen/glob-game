@@ -104,6 +104,7 @@ export default class GameManager {
                 const position = glob[2]
 
                 // -1: food
+                // -2: virus
                 // else: player
                 const player_index = glob[3]
                 const player_data = players[player_index]
@@ -129,7 +130,7 @@ export default class GameManager {
                         }
                     }
                     else {
-                        shape = scene.food_glob()
+                        shape = player_index == -2 ? scene.virus_glob() : scene.food_glob()
                     }
 
                     world.set(entity, Shape, shape)

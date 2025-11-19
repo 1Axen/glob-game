@@ -6,7 +6,7 @@
   "scripts": {
     "build": "webpack",
     "prestart": "webpack &",
-    "start": "python server/server.py",
+    "start": "python3 server/server.py",
     "poststart": "kill $(jobs -p)"
   },
   "repository": {

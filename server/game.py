@@ -18,6 +18,7 @@ GameConfigSingleton = component(GameConfig)
 
 # types
 Food = tag()
+Virus = tag()
 Player = tag()
 Session = component(str)
 
@@ -27,6 +28,7 @@ Parent = component(Id[None])
 
 # gameplay
 EatsFood = tag()
+ShouldSplit = tag()
 MergeDebounce = component(float)
 
 # physics
@@ -99,6 +101,23 @@ def spawn_player(world: World, parent: Id, mass: float, position: Vector) -> Id:
     world.set(glob, Velocity, Vector())
     world.set(glob, MoveDirection, Vector())
     return glob
+
+def spawn_virus(world: World, config: GameConfig) -> Id:
+    min_mass = config.virus_mass[0]
+    max_mass = config.virus_mass[1]
+    mass = min_mass + ((max_mass - min_mass) * random.random())  
+    
+    half_width = config.width // 2
+    half_height = config.height // 2
+    position = Vector(
+        random.randint(-half_width, half_width), 
+        random.randint(-half_height, half_height)
+    )
+
+    virus = create_glob(world, mass, position)
+    world.add(virus, Virus)
+    world.add(virus, EatsFood)
+    return virus
 
 def eat_food(world: World):
     config = world.get(GameConfigSingleton, GameConfigSingleton)
@@ -228,6 +247,9 @@ def erode_merge_debounces(world: World, delta_time: float):
 
         world.set(entity, MergeDebounce, debounce)
 
+def split_globs(world: World):
+    pass
+
 def serialize_world(world: World, server_time: float) -> str:
     globs = []
     players = []
@@ -246,6 +268,8 @@ def serialize_world(world: World, server_time: float) -> str:
         
         if parent != None:
             player_index = player_index_map.get(parent)
+        elif world.has(entity, Virus):
+            player_index = -2 
 
         globs.append((entity, mass, (position.x, position.y), player_index))
 
@@ -277,6 +301,9 @@ class GameInstance():
         
         for _ in range(game_config.maximum_food):
             spawn_food(world, game_config, vector_map)
+
+        for _ in range(game_config.maximum_viruses):
+            spawn_virus(world, game_config)
 
         pass
 
@@ -426,8 +453,10 @@ class GameInstance():
             erode_merge_debounces(world, delta_time)
             update_velocity(world, delta_time)
             update_positions(world, delta_time)
+            split_globs(world)
             eat_food(world)
             eat_players(world, delta_time)
+            
             world_state = serialize_world(world, server_time)
             await socket.emit("snapshot", world_state)
 

@@ -15,6 +15,7 @@ class GameConfig(NamedTuple):
     starting_mass: float
 
     food_mass: float
+    virus_mass: tuple[float, float]
     maximum_food: int
     maximum_viruses: int
 
@@ -37,6 +38,8 @@ class Config(NamedTuple):
         contents: dict = json.load(open(file_path))
 
         game_dict: dict = contents["game"]
+        virus_mass: list[float] = game_dict["virus_mass"]
+
         game_config = GameConfig(
             game_dict["width"], 
             game_dict["height"], 
@@ -47,7 +50,8 @@ class Config(NamedTuple):
             game_dict["maximum_mass"], 
             game_dict["minimum_mass"], 
             game_dict["starting_mass"], 
-            game_dict["food_mass"], 
+            game_dict["food_mass"],
+            (virus_mass[0], virus_mass[1]), 
             game_dict["maximum_food"], 
             game_dict["maximum_viruses"],
             game_dict["base_radius"],
