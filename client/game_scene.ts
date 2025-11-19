@@ -37,16 +37,18 @@ function create_grid_texture(size: number, thickness: number, color: string) {
     canvas.height = size
 
     const context = canvas.getContext("2d")
-    context.strokeStyle = color
-    context.lineWidth = thickness
+    if (context != null) {
+        context.strokeStyle = color
+        context.lineWidth = thickness
 
-    context.beginPath()
-    context.moveTo(0, 0)
-    context.lineTo(size, 0)
-    context.moveTo(0, 0)
-    context.lineTo(0, size)
-    context.stroke()
-    context.closePath()
+        context.beginPath()
+        context.moveTo(0, 0)
+        context.lineTo(size, 0)
+        context.moveTo(0, 0)
+        context.lineTo(0, size)
+        context.stroke()
+        context.closePath()
+    }
 
     return Texture.from(canvas)
 }

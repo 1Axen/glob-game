@@ -156,7 +156,7 @@ function create_query(world: World, ids: Id[]) {
                     
                     const values: any[] = [entity]
                     for (const component of ids) {
-                        const column = columns_map.get(component)
+                        const column = columns_map.get(component) as Column
                         const value = (column === TAG_COLUMN ? undefined : column[row])
                         values.push(value)
                     }
@@ -317,7 +317,9 @@ export class World {
             
             const last_entity = source_entities[source_last_row]
             source_entities[source_row] = last_entity
-            entity_index.sparse.get(last_entity).row = source_row
+
+            const last_record = entity_index.sparse.get(last_entity) as Record
+            last_record.row = source_row
         }
         else {
             for (const [index, column] of source_columns.entries()) {
@@ -432,7 +434,7 @@ export class World {
             column = to_archetype.columns_map.get(component)
         }
 
-        column[record.row] = value
+        ;(column as Column)[record.row] = value
     }
 
     remove(entity: Id, component: Id) {
@@ -481,7 +483,9 @@ export class World {
 
             const last_entity = entities[last_row]
             entities[row] = last_entity
-            entity_index.sparse.get(last_entity).row = row
+
+            const last_record = entity_index.sparse.get(last_entity) as Record
+            last_record.row = row
         }
 
         entities.pop()
