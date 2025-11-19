@@ -118,14 +118,18 @@ def eat_food(world: World):
             assert food_position != None
 
             food_radius = mass_to_radius(config, food_mass)
+            
             if not can_eat_glob(position, radius, food_position, food_radius):
                 continue
 
             mass += food_mass
-            world.delete(food_entity)
-            vector_map.remove(food_entity, food_position)
 
-            spawn_food(world, config, vector_map)
+            is_player_drop = world.has(entity, Velocity)
+            vector_map.remove(food_entity, food_position)
+            world.delete(food_entity)
+
+            if not is_player_drop:
+                spawn_food(world, config, vector_map)
             
         world.set(entity, Mass, mass)
 
