@@ -26,6 +26,7 @@ Name = component(str)
 Parent = component(Id[None])
 
 # gameplay
+EatsFood = tag()
 MergeDebounce = component(float)
 
 # physics
@@ -91,6 +92,7 @@ def spawn_player(world: World, parent: Id, mass: float, position: Vector) -> Id:
     glob = create_glob(world, mass, position)
     world.add(glob, Player)
     world.add(glob, parent)
+    world.add(glob, EatsFood)
     world.set(glob, Parent, parent)
     world.set(glob, Velocity, Vector())
     world.set(glob, MoveDirection, Vector())
@@ -103,7 +105,7 @@ def eat_food(world: World):
     assert config != None
     assert vector_map != None
 
-    for entity, mass, position in Query(world, Mass, Position).with_ids(Player):
+    for entity, mass, position in Query(world, Mass, Position).with_ids(EatsFood):
         radius = mass_to_radius(config, mass)
         food_globs = vector_map.query_radius(position, radius)
 
