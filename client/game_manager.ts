@@ -1,7 +1,7 @@
 import { Socket } from "socket.io-client";
 import { Id, World } from "./libs/ecs";
 import GameScene from "./game_scene";
-import { Color, Point, Ticker } from "pixi.js";
+import { Color, Container, Point, Ticker } from "pixi.js";
 import { LocalPlayer, Mass, Name, Player, Position, Shape } from "./components";
 import { server } from "../config.json"
 import SyncedClock from "./libs/synced_clock";
@@ -24,14 +24,6 @@ const MAX_SNAPSHOTS = server.update_rate
 
 function lerp(a: number, b: number, t: number): number {
     return a + (b - a) * t
-}
-
-function random_color(): Color {
-    return new Color({
-        r: Math.random() * 255,
-        g: Math.random() * 255,
-        b: Math.random() * 255,
-    })
 }
 
 function session_id_to_color(session_id: string): Color {
@@ -73,6 +65,7 @@ export default class GameManager {
         this.input = new InputManager(viewport)
         this.leaderboard = new Leaderboard(world,leaderboard_div)
         this.snapshots = []
+        this.on_death = () => {}
 
         this.setup_snapshot_receive()
     }
@@ -110,34 +103,40 @@ export default class GameManager {
                 const mass = glob[1]
                 const position = glob[2]
 
-                const player_data = players[glob[3]]
-                const name = player_data?.[0]
-                const session_id = player_data?.[1]
+                // -1: food
+                // else: player
+                const player_index = glob[3]
+                const player_data = players[player_index]
+
 
                 var entity = entities_map.get(id)
                 const point = new Point(position[0], position[1])
 
                 if (entity == undefined) {
-                    const color = session_id != undefined 
-                        ? session_id_to_color(session_id) 
-                        : random_color()
-                    const shape = scene.glob(color, name)
-
                     entity = world.entity()
-                    world.set(entity, Shape, shape)
-                    world.set(entity, Position, point)
 
+                    var shape: Container
                     if (player_data != undefined) {
+                        const name = player_data[0]
+                        const session_id = player_data[1]
+
                         world.set(entity, Name, name)
                         world.set(entity, Player, session_id)
+                        shape = scene.player_glob(name, session_id_to_color(session_id))
+
+                        if (session_id == socket.id) {
+                            world.add(entity, LocalPlayer)
+                        }
                     }
-                    
-                    if (session_id == socket.id) {
-                        world.add(entity, LocalPlayer)
+                    else {
+                        shape = scene.food_glob()
                     }
+
+                    world.set(entity, Shape, shape)
+                    world.set(entity, Position, point)
                     
                     entities_map.set(id, entity)
-                    console.log("new entity(%d:%s:%s:%s)", id, name, session_id, world.has(entity, LocalPlayer) ? "local" : "remote")
+                    console.log("new entity(%d:%d:%s)", id, player_index, world.has(entity, LocalPlayer) ? "local" : "remote")
                 }
 
                 world.set(entity, Mass, mass)

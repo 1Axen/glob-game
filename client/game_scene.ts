@@ -15,6 +15,41 @@ function mass_to_radius(mass: number): number {
     return game.base_radius + (mass * game.mass_radius_constant)
 }
 
+function multiply_brightness(color: Color, multiplier: number): Color {
+    const [r, g, b] = color.toRgbArray()
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    const delta = (max - min)
+
+    const value = (max * multiplier) * 100
+    const saturation = (max == 0 ? 0 : delta / max) * 100
+    
+    var hue = 0
+    if (delta != 0) {
+        if (max == r) {
+            hue = ((g - b) / delta) % 6
+        }
+        else if (max == g) {
+            hue = ((b - r) / delta) + 2
+        }
+        else if (max == b) {
+            hue = ((r - g) / delta) + 4
+        }
+
+        hue *= 60
+    }
+
+    return new Color({h: hue, s: saturation, v: value, a: 1})
+}
+
+function random_color(): Color {
+    return new Color({
+        r: Math.random() * 255,
+        g: Math.random() * 255,
+        b: Math.random() * 255,
+    })
+}
+
 const BASE_RADIUS = mass_to_radius(1)
 const STARTING_RADIUS = mass_to_radius(game.starting_mass)
 const MASS_LERP_SPEED = 16
@@ -82,34 +117,60 @@ export default class GameScene {
         viewport.addChild(sprite)
     }
 
-    glob(color: Color, name?: string): Container {
+    private glob(): [Container, Graphics] {
         const glob = new Container({
             width: BASE_RADIUS * 2,
             height: BASE_RADIUS * 2,
             pivot: new Point(BASE_RADIUS, BASE_RADIUS)
         })
 
-        glob.addChild(new Graphics({
+        const graphics = new Graphics({
             width: BASE_RADIUS * 2,
             height: BASE_RADIUS * 2,
-        }).circle(BASE_RADIUS, BASE_RADIUS, BASE_RADIUS).fill(color))
+        })
 
-        if (name != undefined) {
-            glob.addChild(new BitmapText({
-                x: BASE_RADIUS,
-                y: BASE_RADIUS,
-                text: name,
-                style: {
-                    fill: "#ffffff",
-                    stroke: {color: "#000000", width: 1},
-                    fontSize: FONT_SIZE,
-                },
-                anchor: 0.5,
-            }))
-        }
-        
+        glob.addChild(graphics)
         this.container.addChild(glob)
-        return glob
+
+        return [glob, graphics]
+    }
+
+    food_glob(): Container {
+        const [container, graphics] = this.glob()
+
+        graphics
+            .circle(BASE_RADIUS, BASE_RADIUS, BASE_RADIUS)
+            .fill(random_color())
+
+        return container
+    }
+
+    player_glob(name: string, color: Color): Container {
+        const [container, graphics] = this.glob()
+        const stroke_color = multiply_brightness(color, 0.5)
+
+        graphics
+            .circle(BASE_RADIUS, BASE_RADIUS, BASE_RADIUS)
+            .fill(color)
+            .stroke({
+                width: 1,
+                color: stroke_color,
+                alignment: 1
+            })
+
+        container.addChild(new BitmapText({
+            x: BASE_RADIUS,
+            y: BASE_RADIUS,
+            text: name,
+            style: {
+                fill: "#ffffff",
+                stroke: {color: "#000000", width: 1},
+                fontSize: FONT_SIZE,
+            },
+            anchor: 0.5,
+        }))
+
+        return container
     }
 
     update_globs(delta_time: number) {
