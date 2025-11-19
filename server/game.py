@@ -260,8 +260,9 @@ class GameInstance():
         self.socket = socket
         self.game_config = game_config
         
-        self.tick_rate = (1 / config.server.update_rate)
+        self._tick_rate = (1 / config.server.update_rate)
         self._entity_map = {}
+        self._food_vector_map = vector_map
         
         world.set(GameConfigSingleton, GameConfigSingleton, game_config)
         world.set(VectorMapSingleton, VectorMapSingleton, vector_map)
@@ -390,7 +391,7 @@ class GameInstance():
     async def init_game_loop(self):
         world = self.world
         socket = self.socket
-        tick_rate = self.tick_rate
+        tick_rate = self._tick_rate
 
         last_time = time()
         server_time = 0.0
