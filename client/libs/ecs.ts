@@ -492,17 +492,7 @@ export class World {
         entity_index.sparse.delete(entity)
     }
 
-    query<A, B, C, D, E, F, G>(
-        A?: Id<A>, 
-        B?: Id<B>, 
-        C?: Id<C>, 
-        D?: Id<D>, 
-        E?: Id<E>, 
-        F?: Id<F>, 
-        G?: Id<G>
-    ): QueryIterator<[Id, A, B, C, D, E, F, G]> {
-        var ids = [A, B, C, D, E, F, G]
-        ids = ids.slice(0, ids.indexOf(undefined))
+    query<T extends Id[]>(...ids: [...T]): QueryIterator<[Id, ...{[K in keyof T]: T[K] extends Id<infer U> ? U : never}]> {
         return create_query(this, ids) as any
     }
 }
