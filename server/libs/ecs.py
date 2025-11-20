@@ -388,6 +388,8 @@ class Query():
     index: int = -1
     last_archetype: int = -1
     matched_archetypes: List[Archetype]
+    entities: List[Id] = []
+    columns_map: Dict[Id, Column] = {}
 
     def with_ids(self, *terms: Id):
         self.with_terms += terms
@@ -452,10 +454,19 @@ class Query():
     def __next__(self):
         index = self.index
         terms = self.terms
+        entities = self.entities
+        columns_map = self.columns_map
         last_archtype = self.last_archetype
         matched_archetypes = self.matched_archetypes
         
-        while index == -1:
+        entity = None
+        if index >= 0:
+            try:
+                entity = entities[index]
+            except:
+                pass
+
+        while entity == None:
             last_archtype += 1
             self.last_archetype = last_archtype
 
@@ -469,13 +480,14 @@ class Query():
             if index == -1:
                 continue
 
+            entity = entities[index]
+            columns_map = archetype.columns_map
+            self.entities = entities
+            self.columns_map = columns_map
+
         self.index = (index - 1)
-        archetype = matched_archetypes[last_archtype]
-        columns_map = archetype.columns_map
 
-        entity = archetype.entities[index]
         values = []
-
         for component in terms:
             column = columns_map[component]
             value = None if is_tag_column(column) else column[index] 
