@@ -416,6 +416,7 @@ class GameInstance():
 
         minimum_mass = game_config.minimum_mass
         merge_debounce = game_config.merge_debounce
+        new_entities: list[tuple[float, Vector, Vector]] = []
 
         for entity, mass, position in Query(world, Mass, Position).with_ids(parent):
             half_mass = (mass / 2)
@@ -429,12 +430,17 @@ class GameInstance():
                 direction = vector.normalize(direction)
 
             radius = mass_to_radius(game_config, half_mass)
-            position += direction * radius
+            spawn_velocity = direction * 512
+            spawn_position = position + (direction * radius)
+            new_entities.append((half_mass, spawn_velocity, spawn_position))
 
-            split_entity = spawn_player(world, parent, half_mass, position)
-            world.set(split_entity, Velocity, direction * 512)
-            world.set(split_entity, MergeDebounce, merge_debounce)
             world.set(entity, Mass, half_mass)
+
+        for entry in new_entities:
+            mass, velocity, position = entry
+            entity = spawn_player(world, parent, mass, position)
+            world.set(entity, Velocity, velocity)
+            world.set(entity, MergeDebounce, merge_debounce)
 
     async def init_game_loop(self):
         world = self.world
