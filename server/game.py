@@ -247,7 +247,7 @@ def erode_merge_debounces(world: World, delta_time: float):
 def split_globs(world: World):
     pass
 
-def serialize_world(world: World, server_time: float) -> str:
+def serialize_world(world: World, server_time: float):
     globs = []
     players = []
     world_state = [server_time, players, globs]
@@ -270,7 +270,7 @@ def serialize_world(world: World, server_time: float) -> str:
 
         globs.append((entity, mass, (position.x, position.y), player_index))
 
-    return json.dumps(world_state)
+    return world_state
 
 class GameInstance():
     world: World

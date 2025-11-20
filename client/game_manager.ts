@@ -78,8 +78,7 @@ export default class GameManager {
         const snapshots = this.snapshots
         
         const entities_map: Map<number, Id> = new Map()
-        socket.on("snapshot", (state_json: string) => {
-            const state = JSON.parse(state_json) as WorldState
+        socket.on("snapshot", (state: WorldState) => {
             const server_time = state[0]
             const players = state[1]
 
