@@ -360,7 +360,7 @@ export class World {
         record.archetype = to
     }
 
-    entity(): Id {
+    entity(): Id<undefined> {
         const entity_index = this.entity_index
         const root_archetype = this.root_archetype
 
@@ -433,7 +433,7 @@ export class World {
         return column[record.row]
     }
 
-    set<T>(entity: Id, component: Id<T>, value: T) {
+    set<T extends NonNullable<unknown>>(entity: Id, component: Id<T>, value: T) {
         const record = this.entity_index.sparse.get(entity)
         if (record == undefined) {
             return
@@ -517,7 +517,7 @@ export class World {
 
 export function tag(): Id<undefined> {
     max_prereg_tag_id += 1
-    return max_prereg_tag_id as Id<undefined>
+    return max_prereg_tag_id as Id
 }
 
 export function component<T>(): Id<T> {
