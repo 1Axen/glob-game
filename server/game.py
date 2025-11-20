@@ -79,6 +79,10 @@ def create_glob(world: World, mass: float, position: Vector) -> Id:
     return glob
 
 def spawn_food(world: World, config: GameConfig, vector_map: VectorMap) -> Id:
+    min_mass = config.food_mass[0]
+    max_mass = config.food_mass[1]
+    mass = min_mass + ((max_mass - min_mass) * random.random())
+
     half_width = config.width // 2
     half_height = config.height // 2
     position = Vector(
@@ -86,7 +90,7 @@ def spawn_food(world: World, config: GameConfig, vector_map: VectorMap) -> Id:
         random.randint(-half_height, half_height)
     )
 
-    entity = create_glob(world, config.food_mass, position)
+    entity = create_glob(world, mass, position)
     world.add(entity, Food)
     vector_map.insert(entity, position)
 

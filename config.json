@@ -18,7 +18,7 @@
         "minimum_mass": 2,
         "starting_mass": 2,
 
-        "food_mass": 0.15,
+        "food_mass": [0.15, 0.2],
         "virus_mass": [4, 6],
         "maximum_food": 1024,
         "maximum_viruses": 24,
