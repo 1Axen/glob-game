@@ -8,16 +8,16 @@
         "width": 4096,
         "height": 4096,
 
-        "maximum_speed": 128,
+        "maximum_speed": 160,
         "minimum_speed": 16,
         "friction": 2,
         "acceleration": 16,
 
         "maximum_mass": 512,
-        "minimum_mass": 4,
-        "starting_mass": 8,
+        "minimum_mass": 2,
+        "starting_mass": 2,
 
-        "food_mass": 0.1,
+        "food_mass": 0.15,
         "virus_mass": [4, 6],
         "maximum_food": 1024,
         "maximum_viruses": 24,
