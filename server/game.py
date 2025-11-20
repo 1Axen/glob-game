@@ -13,7 +13,7 @@ Vector = vector.Vector
 SocketServer = socketio.AsyncServer
 
 # singletons
-VectorMapSingleton = component(VectorMap)
+FoodVectorMap = component(VectorMap)
 GameConfigSingleton = component(GameConfig)
 
 # types
@@ -48,6 +48,11 @@ def clamp(x: float, min: float, max: float) -> float:
     if (x < min):
         return min
     return x
+
+def assert_get(world: World, entity: Id, component: Id[Data]) -> Data:
+    value = world.get(entity, component)
+    assert value != None
+    return value
 
 def point_to_vector(config: GameConfig, point: tuple[float, float]) -> Vector:
     max_x = config.width / 2
@@ -124,11 +129,8 @@ def spawn_virus(world: World, config: GameConfig) -> Id:
     return virus
 
 def eat_food(world: World):
-    config = world.get(GameConfigSingleton, GameConfigSingleton)
-    vector_map = world.get(VectorMapSingleton, VectorMapSingleton)
-
-    assert config != None
-    assert vector_map != None
+    config = assert_get(world, GameConfigSingleton, GameConfigSingleton)
+    vector_map = assert_get(world, FoodVectorMap, FoodVectorMap)
 
     for entity, mass, position in Query(world, Mass, Position).with_ids(EatsFood):
         radius = mass_to_radius(config, mass)
@@ -138,12 +140,8 @@ def eat_food(world: World):
             if (not world.contains(food_entity)):
                 continue
 
-            food_mass = world.get(food_entity, Mass)
-            food_position = world.get(food_entity, Position)
-
-            assert food_mass != None
-            assert food_position != None
-
+            food_mass = assert_get(world, food_entity, Mass)
+            food_position = assert_get(world, food_entity, Position)
             food_radius = mass_to_radius(config, food_mass)
             
             if not can_eat_glob(position, radius, food_position, food_radius):
@@ -161,8 +159,7 @@ def eat_food(world: World):
         world.set(entity, Mass, mass)
 
 def eat_players(world: World, delta_time: float):
-    config = world.get(GameConfigSingleton, GameConfigSingleton)
-    assert config != None
+    config = assert_get(world, GameConfigSingleton, GameConfigSingleton)
 
     for entity, mass, position, parent in Query(world, Mass, Position, Parent):
         radius = mass_to_radius(config, mass)
@@ -187,8 +184,7 @@ def eat_players(world: World, delta_time: float):
         world.set(entity, Mass, mass)
 
 def update_velocity(world: World, delta_time: float):
-    config = world.get(GameConfigSingleton, GameConfigSingleton)
-    assert config != None
+    config = assert_get(world, GameConfigSingleton, GameConfigSingleton)
 
     for entity, mass, velocity in Query(world, Mass, Velocity):
         velocity = vector.friction(velocity, config.friction, delta_time)
@@ -202,11 +198,8 @@ def update_velocity(world: World, delta_time: float):
         world.set(entity, Velocity, velocity)
 
 def update_positions(world: World, delta_time: float):
-    config = world.get(GameConfigSingleton, GameConfigSingleton)
-    vector_map = world.get(VectorMapSingleton, VectorMapSingleton)
-
-    assert config != None
-    assert vector_map != None
+    config = assert_get(world, GameConfigSingleton, GameConfigSingleton)
+    vector_map = assert_get(world, FoodVectorMap, FoodVectorMap)
 
     half_width = config.width / 2
     half_height = config.height / 2
@@ -289,8 +282,8 @@ class GameInstance():
     _food_vector_map: VectorMap
 
     def __init__(self, socket: SocketServer, world: World, config: Config) -> None:
-        vector_map = VectorMap()
         game_config = config.game
+        food_vector_map = VectorMap()
 
         self.world = world
         self.socket = socket
@@ -298,13 +291,13 @@ class GameInstance():
         
         self._tick_rate = (1 / config.server.update_rate)
         self._entity_map = {}
-        self._food_vector_map = vector_map
+        self._food_vector_map = food_vector_map
         
+        world.set(FoodVectorMap, FoodVectorMap, food_vector_map)
         world.set(GameConfigSingleton, GameConfigSingleton, game_config)
-        world.set(VectorMapSingleton, VectorMapSingleton, vector_map)
         
         for _ in range(game_config.maximum_food):
-            spawn_food(world, game_config, vector_map)
+            spawn_food(world, game_config, food_vector_map)
 
         for _ in range(game_config.maximum_viruses):
             spawn_virus(world, game_config)
