@@ -259,10 +259,14 @@ export default class GameScene {
         const radius = Math.max(width / 2, height / 2)
 
         const curr_zoom = this.zoom
-        const target_zoom = Math.min(1, (STARTING_RADIUS / radius) ^ 4)
-        const fraction = (MASS_LERP_SPEED * delta_time)
-
-        this.zoom = lerp(curr_zoom, target_zoom, fraction)
+        const fraction = (radius - STARTING_RADIUS) / STARTING_RADIUS
+        var target_zoom = 1.5 / (1 + Math.log(1 + fraction / 8))
+        
+        if (isNaN(target_zoom)) {
+            target_zoom = curr_zoom
+        }
+        
+        this.zoom = lerp(curr_zoom, target_zoom, MASS_LERP_SPEED * delta_time)
         viewport.setZoom(this.zoom)
         viewport.moveCenter((max_x + min_x) / 2, (max_y + min_y) / 2)
     }
