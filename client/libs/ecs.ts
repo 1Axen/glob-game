@@ -16,6 +16,7 @@ interface Archetype {
 
 type Archetypes = Archetype[]
 type ArchetypeIndex = Map<Type, Archetype>
+type ArchetypeEdges = Map<ArchetypeId, Map<Id, Archetype>>
 
 interface Record {
     row: number,
@@ -193,6 +194,7 @@ export class World {
     root_archetype: Archetype
     component_index: ComponentIndex
     archetype_index: ArchetypeIndex
+    archetype_edges: ArchetypeEdges
     private max_component_id: number
 
     constructor() {
@@ -211,6 +213,9 @@ export class World {
         const archetype_index: ArchetypeIndex = new Map()
         archetype_index.set(ROOT_TYPE, ROOT_ARCHETYPE)
 
+        const archetype_edges: ArchetypeEdges = new Map()
+        archetype_edges.set(ROOT_ID, new Map())
+
         this.archetypes = archetypes
         this.entity_index = {
             size: 0,
@@ -218,6 +223,7 @@ export class World {
         }
         this.component_index = []
         this.archetype_index = archetype_index
+        this.archetype_edges = archetype_edges
         this.root_archetype = ROOT_ARCHETYPE
         this.max_component_id = max_prereg_component_id
 
@@ -281,6 +287,7 @@ export class World {
 
         this.archetypes[archetype_id] = archetype
         this.archetype_index.set(type, archetype)
+        this.archetype_edges.set(archetype_id, new Map())
 
         return archetype
     }
@@ -304,6 +311,23 @@ export class World {
         const row = entities.length
         entities.push(entity)
         return row
+    }
+
+    private find_archetype_with(id: Id, source: Archetype): Archetype {
+        const archetype_edges = this.archetype_edges
+        const source_edges = archetype_edges.get(source.id)!
+
+        let to = source_edges.get(id)
+        if (to == undefined) {
+            const types = source.types.slice()
+            const insert_at = find_insert(types, id)
+            types.splice(insert_at, 0, id)
+            to = this.archetype_ensure(types)
+            source_edges.set(id, to)
+            archetype_edges.get(to.id)!.set(id, source)
+        }
+
+        return to
     }
 
     private entity_move(entity: Id, record: Record, to: Archetype) {
@@ -407,14 +431,11 @@ export class World {
             return
         }
 
-        const archetype = record.archetype
-        if (archetype.columns_map.has(component)) return;
+        const source_archetype = record.archetype
+        if (source_archetype.columns_map.has(component)) 
+            return;
 
-        const types = archetype.types.slice()
-        const insert_at = find_insert(types, component)
-        types.splice(insert_at, 0, component)
-
-        const to_archetype = this.archetype_ensure(types)
+        const to_archetype = this.find_archetype_with(component, source_archetype)
         this.entity_move(entity, record, to_archetype)
     }
 
@@ -439,20 +460,15 @@ export class World {
             return
         }
 
-        const archetype = record.archetype
-
-        var column = archetype.columns_map.get(component)
-        if (column == undefined) {
-            const types = archetype.types.slice()
-            const insert_at = find_insert(types, component)
-            types.splice(insert_at, 0, component)
-
-            const to_archetype = this.archetype_ensure(types)
+        const source_archetype = record.archetype
+        let to_archetype = source_archetype
+        if (!source_archetype.columns_map.has(component)) {
+            to_archetype = this.find_archetype_with(component, source_archetype)
             this.entity_move(entity, record, to_archetype)
-            column = to_archetype.columns_map.get(component)
         }
-
-        ;(column as Column)[record.row] = value
+        
+        const column = to_archetype.columns_map.get(component)!
+        column[record.row] = value
     }
 
     remove(entity: Id, component: Id) {
@@ -461,14 +477,25 @@ export class World {
             return
         }
 
-        const archetype = record.archetype
+        const source_archetype = record.archetype
+        const source_id = source_archetype.id
 
-        const component_record = this.component_index[component]
-        const index = component_record.archetypes.get(archetype.id)
-        if (index == undefined) return;
+        const id_record = this.component_record_ensure(component)
+        const index = id_record.archetypes.get(source_archetype.id)
+        if (index == undefined) 
+            return;
 
-        const types = archetype.types.splice(index, 1)
-        const to_archetype = this.archetype_ensure(types)
+        const archetype_edges = this.archetype_edges
+        const source_edges = archetype_edges.get(source_id)!
+
+        let to_archetype = source_edges.get(component)
+        if (to_archetype == undefined) {
+            const types = source_archetype.types.splice(index, 1)
+            to_archetype = this.archetype_ensure(types)
+            source_edges.set(component, to_archetype)
+            archetype_edges.get(to_archetype.id)!.set(component, source_archetype)
+        }
+
         this.entity_move(entity, record, to_archetype)
     }
 

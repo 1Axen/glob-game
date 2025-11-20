@@ -22,6 +22,7 @@ class Archetype(NamedTuple):
 
 Archetypes = Dict[ArchetypeId, Archetype]
 ArchetypeIndex = Dict[Type, Archetype]
+ArchetypeEdges = Dict[ArchetypeId, Dict[Id, Archetype]]
 
 @dataclass
 class Record():
@@ -86,6 +87,7 @@ class World():
     entity_index: EntityIndex
     component_index: ComponentIndex
     archetype_index: ArchetypeIndex
+    archetype_edges: ArchetypeEdges
     root_archetype: Archetype
 
     def __init__(self):
@@ -96,6 +98,7 @@ class World():
         self.entity_index = EntityIndex()
         self.component_index = {}
         self.archetype_index = {ROOT_ARCHETYPE_TYPE: root_archetype}
+        self.archetype_edges = {ROOT_ARCHETYPE_ID: {}}
         self.root_archetype = root_archetype
 
         for _ in range(0, EcsRest):
@@ -139,6 +142,7 @@ class World():
 
         self.archetypes[archetype_id] = archetype
         self.archetype_index[type] = archetype
+        self.archetype_edges[archetype_id] = {}
 
         return archetype
 
@@ -205,6 +209,21 @@ class World():
         record.archetype = to
         record.row = to_row
 
+    def __find_archetype_with(self, id: Id, source: Archetype) -> Archetype:
+        archetype_edges = self.archetype_edges
+        source_edges = archetype_edges[source.id]
+        to = source_edges.get(id)
+
+        if (to == None):
+            types = source.types.copy()
+            insert_at = find_insert(types, id)
+            types.insert(insert_at, id)
+            to = self.__archetype_ensure(types)
+            source_edges[id] = to
+            archetype_edges[to.id][id] = source
+
+        return to
+
     def entity(self) -> Id[None]:
         entity_index = self.entity_index
         root_archetype = self.root_archetype
@@ -263,46 +282,37 @@ class World():
         if (record == None):
             return
 
-        archetype = record.archetype
-        
-        if (component in archetype.columns_map):
+        source_archetype = record.archetype
+        if (component in source_archetype.columns_map):
             return
 
-        id_record = self.component_index.get(component)
-        if (id_record != None and not id_record.is_tag):
+        id_record = self.__component_record_ensure(component)
+        if not id_record.is_tag:
             raise AddComponentException("Cannot add a component, use set instead")
 
-        types = archetype.types.copy()
-        insert_at = find_insert(types, component)
-        types.insert(insert_at, component)
-
-        to_archetype = self.__archetype_ensure(types)
+        to_archetype = self.__find_archetype_with(component, source_archetype)
         self.__entity_move(entity, record, to_archetype)
 
     def set(self, entity: Id, component: Id[Data], value: Data):
         if (value == None):
             raise SetNoneException("Cannot set value to None, use remove instead")
 
+        id_record = self.__component_record_ensure(component)
+        if (id_record.is_tag):
+            raise SetTagException("Cannot set a tag, use add instead")
+
         record = self.entity_index.sparse.get(entity)
         if (record == None):
             return
         
-        archetype = record.archetype
+        source_archetype = record.archetype
+        to_archetype = source_archetype
 
-        if not (component in archetype.columns_map):
-            types = archetype.types.copy()
-            insert_at = find_insert(types, component)
-            types.insert(insert_at, component)
-
-            to_archetype = self.__archetype_ensure(types)
+        if not (component in source_archetype.columns_map):
+            to_archetype = self.__find_archetype_with(component, source_archetype)
             self.__entity_move(entity, record, to_archetype)
-            archetype = to_archetype
         
-        id_record = self.component_index[component]
-        if (id_record.is_tag):
-            raise SetTagException("Cannot set a tag, use add instead")
-
-        column = archetype.columns_map[component]
+        column = to_archetype.columns_map[component]
         if len(column) > record.row:
             column[record.row] = value
         else:
@@ -313,17 +323,26 @@ class World():
         if (record == None):
             return
 
-        archetype = record.archetype
+        source_archetype = record.archetype
+        source_id = source_archetype.id
+        id_record = self.__component_record_ensure(component)
 
-        component_record = self.component_index[component]
-        index = component_record.archetypes.get(archetype.id, None)
+        index = id_record.archetypes.get(source_id, None)
         if (index == None):
             return
         
-        types = archetype.types.copy()
-        types.pop(index)
+        archetype_edges = self.archetype_edges
+        source_edges = archetype_edges[source_id]
 
-        to_archetype = self.__archetype_ensure(types)
+        to_archetype = source_edges.get(component)
+        if (to_archetype == None):
+            types = source_archetype.types.copy()
+            types.pop(index)
+            to_archetype = self.__archetype_ensure(types)
+
+            source_edges[component] = to_archetype
+            archetype_edges[to_archetype.id][component] = source_archetype
+
         self.__entity_move(entity, record, to_archetype)
 
     def delete(self, entity: Id):
