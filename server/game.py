@@ -1,5 +1,5 @@
 import socketio
-from libs.ecs import World, Id, Query, tag, component
+from libs.ecs import World, Id, Query, tag, component, Data
 import random
 import json
 import libs.vector as vector
@@ -14,6 +14,7 @@ SocketServer = socketio.AsyncServer
 
 # singletons
 FoodVectorMap = component(VectorMap)
+VirusVectorMap = component(VectorMap)
 GameConfigSingleton = component(GameConfig)
 
 # types
@@ -111,7 +112,7 @@ def spawn_player(world: World, parent: Id, mass: float, position: Vector) -> Id:
     world.set(glob, MoveDirection, Vector())
     return glob
 
-def spawn_virus(world: World, config: GameConfig) -> Id:
+def spawn_virus(world: World, config: GameConfig, vector_map: VectorMap) -> Id:
     min_mass = config.virus_mass[0]
     max_mass = config.virus_mass[1]
     mass = min_mass + ((max_mass - min_mass) * random.random())  
@@ -126,6 +127,8 @@ def spawn_virus(world: World, config: GameConfig) -> Id:
     virus = create_glob(world, mass, position)
     world.add(virus, Virus)
     world.add(virus, EatsFood)
+    vector_map.insert(virus, position)
+
     return virus
 
 def eat_food(world: World):
@@ -182,6 +185,62 @@ def eat_players(world: World, delta_time: float):
             world.delete(other_entity)
 
         world.set(entity, Mass, mass)
+
+def eat_viruses(world: World):
+    config = assert_get(world, GameConfigSingleton, GameConfigSingleton)
+    vector_map = assert_get(world, VirusVectorMap, VirusVectorMap)
+
+    minimum_mass = config.minimum_mass
+    maximum_splits = config.maximum_splits
+    merge_debounce = config.merge_debounce
+
+    for parent, _ in Query(world, Session):
+        ate_virus = False
+
+        for entity, mass, position, move_direction in Query(world, Mass, Position, MoveDirection).with_ids(parent):
+            radius = mass_to_radius(config, mass)
+            viruses_in_radius = vector_map.query_radius(position, radius)
+
+            for virus_entity in viruses_in_radius:
+                if not world.contains(virus_entity):
+                    continue
+
+                virus_mass = assert_get(world, virus_entity, Mass)
+                virus_position = assert_get(world, virus_entity, Position)
+                virus_radius = mass_to_radius(config, virus_mass)
+
+                if not can_eat_glob(position, radius, virus_position, virus_radius):
+                    continue
+
+                children = 0
+                for _ in Query(world, parent):
+                    children += 1
+
+                total_mass = (mass + virus_mass)
+                splits_count = int(min(total_mass // minimum_mass, maximum_splits - children))
+                mass_split_off = splits_count * minimum_mass
+
+                new_mass = (total_mass - mass_split_off)
+                new_radius = mass_to_radius(config, new_mass)
+                world.set(entity, Mass, new_mass)
+
+                for _ in range(splits_count):
+                    rand_vector = vector.random()
+                    spawn_position = position + (rand_vector * new_radius)
+                    split_entity = spawn_player(world, parent, minimum_mass, spawn_position)
+                    world.set(split_entity, Velocity, rand_vector * 512)
+                    world.set(split_entity, MergeDebounce, merge_debounce)
+                    world.set(split_entity, MoveDirection, move_direction)
+
+                ate_virus = True
+                world.delete(virus_entity)
+                vector_map.remove(virus_entity, virus_position)
+                spawn_virus(world, config, vector_map)
+
+                break
+
+            if ate_virus:
+                break
 
 def update_velocity(world: World, delta_time: float):
     config = assert_get(world, GameConfigSingleton, GameConfigSingleton)
@@ -244,9 +303,6 @@ def erode_merge_debounces(world: World, delta_time: float):
 
         world.set(entity, MergeDebounce, debounce)
 
-def split_globs(world: World):
-    pass
-
 def serialize_world(world: World, server_time: float):
     globs = []
     players = []
@@ -284,6 +340,7 @@ class GameInstance():
     def __init__(self, socket: SocketServer, world: World, config: Config) -> None:
         game_config = config.game
         food_vector_map = VectorMap()
+        virus_vector_map = VectorMap()
 
         self.world = world
         self.socket = socket
@@ -294,13 +351,14 @@ class GameInstance():
         self._food_vector_map = food_vector_map
         
         world.set(FoodVectorMap, FoodVectorMap, food_vector_map)
+        world.set(VirusVectorMap, VirusVectorMap, virus_vector_map)
         world.set(GameConfigSingleton, GameConfigSingleton, game_config)
         
         for _ in range(game_config.maximum_food):
             spawn_food(world, game_config, food_vector_map)
 
         for _ in range(game_config.maximum_viruses):
-            spawn_virus(world, game_config)
+            spawn_virus(world, game_config, virus_vector_map)
 
         pass
 
@@ -457,7 +515,7 @@ class GameInstance():
             erode_merge_debounces(world, delta_time)
             update_velocity(world, delta_time)
             update_positions(world, delta_time)
-            split_globs(world)
+            eat_viruses(world)
             eat_food(world)
             eat_players(world, delta_time)
             

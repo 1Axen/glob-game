@@ -19,13 +19,14 @@
         "starting_mass": 2,
 
         "food_mass": [0.15, 0.2],
-        "virus_mass": [4, 6],
+        "virus_mass": [6, 8],
         "maximum_food": 1024,
         "maximum_viruses": 24,
 
         "base_radius": 4,
         "mass_radius_constant": 6,
 
-        "merge_debounce": 30
+        "merge_debounce": 30,
+        "maximum_splits": 16
     }
 }

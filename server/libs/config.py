@@ -25,6 +25,7 @@ class GameConfig(NamedTuple):
     mass_radius_consant: float
 
     merge_debounce: float
+    maximum_splits: int
 
 class ServerConfig(NamedTuple):
     port: int
@@ -60,7 +61,8 @@ class Config(NamedTuple):
             game_dict["maximum_viruses"],
             game_dict["base_radius"],
             game_dict["mass_radius_constant"],
-            game_dict["merge_debounce"]
+            game_dict["merge_debounce"],
+            game_dict["maximum_splits"]
         )
 
         server_dict: dict = contents["server"]

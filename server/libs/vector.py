@@ -1,5 +1,5 @@
-from typing import NamedTuple, SupportsIndex
-from math import sqrt, pow, inf
+from math import sqrt
+from random import random as randfloat
 
 class Vector():
     x: float
@@ -50,6 +50,12 @@ class Vector():
         return hash((self.x, self.y))
 
 EPSILON = 1E-5
+
+def random(scale: float = 1) -> Vector:
+    return Vector(
+        ((randfloat() * 2) - 1) * scale,
+        ((randfloat() * 2) - 1) * scale
+    )
     
 def magnitude(vector: Vector) -> float:
     return sqrt((vector.x * vector.x) + (vector.y * vector.y))
