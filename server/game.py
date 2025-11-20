@@ -380,12 +380,12 @@ class GameInstance():
         food_vector_map = self._food_vector_map
         target_position = point_to_vector(game_config, target_point)
 
-        food_mass = game_config.food_mass
-        food_diameter = mass_to_radius(game_config, game_config.food_mass) * 2 
-        minimum_mass = game_config.minimum_mass
+        eject_mass = game_config.eject_mass
+        eject_diameter = mass_to_radius(game_config, eject_mass)
+        needed_mass = game_config.minimum_mass + eject_mass
 
         for entity, mass, position in Query(world, Mass, Position).with_ids(parent):
-            if (mass <= minimum_mass):
+            if (mass < needed_mass):
                 continue
 
             direction = (target_position - position)
@@ -395,14 +395,15 @@ class GameInstance():
                 direction = vector.normalize(direction)
 
             radius = mass_to_radius(game_config, mass)
-            spawn_offset = (direction * (radius + food_diameter))
+            spawn_offset = (direction * (radius + eject_diameter))
             spawn_position = position + spawn_offset
 
             food_entity = spawn_food(world, game_config, food_vector_map)
-
-            world.set(entity, Mass, max(minimum_mass, mass - food_mass))
+            world.set(food_entity, Mass, eject_mass)
             world.set(food_entity, Position, spawn_position)
             world.set(food_entity, Velocity, direction * 512)
+
+            world.set(entity, Mass, mass - eject_mass)
 
     def split(self, sid: str, target_point: tuple[float, float]):
         parent = self._entity_map.get(sid, None)

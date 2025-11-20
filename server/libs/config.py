@@ -12,6 +12,8 @@ class GameConfig(NamedTuple):
 
     maximum_mass: float
     minimum_mass: float
+
+    eject_mass: float
     starting_mass: float
 
     food_mass: float
@@ -49,6 +51,7 @@ class Config(NamedTuple):
             game_dict["acceleration"], 
             game_dict["maximum_mass"], 
             game_dict["minimum_mass"], 
+            game_dict["eject_mass"],
             game_dict["starting_mass"], 
             game_dict["food_mass"],
             (virus_mass[0], virus_mass[1]), 

@@ -13,6 +13,7 @@
         "friction": 2,
         "acceleration": 16,
 
+        "eject_mass": 1,
         "maximum_mass": 512,
         "minimum_mass": 2,
         "starting_mass": 2,
